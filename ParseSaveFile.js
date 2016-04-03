@@ -1,0 +1,4 @@
+function parseSaveFile() {
+	highScore = entireSaveFileContents;
+}
+
