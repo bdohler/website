@@ -4,7 +4,7 @@ function brickBreaker(game, canvas) {
 
 var d = new Date();
 
-console.log("Inititiating brickBreaker Function");
+//console.log("Inititiating brickBreaker Function");
 var ctx = canvas.getContext("2d");
 
 var ballRadius = 5, initialX = canvas.width/2;
@@ -53,7 +53,7 @@ for(c=0; c<brickColumnCount; c++) {
 	}
 }
 
-console.log("Constructed bricks array");
+//console.log("Constructed bricks array");
 
 document.addEventListener("mousemove", mouseMoveHandler, false);
 document.addEventListener("keydown", keyDownHandler, false);

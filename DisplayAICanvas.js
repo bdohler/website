@@ -85,7 +85,7 @@ function setPaddle() {
 function setBrick() {
 	for(c=0; c<game.columns; c++) {
 		for(r=0; r<game.rows; r++) {
-			console.log("Changing value in cell:["+(2*c)+"]["+(2*r)+"]");
+			//console.log("Changing value in cell:["+(2*c)+"]["+(2*r)+"]");
 			game.input[2*c+2][r+2].brick = game.bricks[c][r].status;
 			game.input[2*c+3][r+2].brick = game.bricks[c][r].status;
 		}  
