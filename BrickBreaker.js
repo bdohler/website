@@ -2,7 +2,7 @@
 
 function brickBreaker(game, canvas) {
 
-var d = new Date();
+
 
 //console.log("Inititiating brickBreaker Function");
 var ctx = canvas.getContext("2d");
@@ -246,9 +246,12 @@ function paddleCollision() {
 	}
 } 
 
-function draw() {
 
-	var n = d.getTime();
+
+function draw() {
+		
+	var d = new Date();
+
 	if(!spaceFlag)
 	{
 		game.gameTime += 0.02;
@@ -267,7 +270,9 @@ function draw() {
 		drawVelocity();
 		drawVelocityIndicator();
 	}
-	game.functionTimes[0] = d.getTime() - n;
+
+	var n = new Date();
+	game.functionTimes[0] = n - d;
 }
 
 setInterval(draw, 20);
