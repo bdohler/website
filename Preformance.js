@@ -40,11 +40,26 @@ function drawPreformanceMonitor() {
 		var height1 = preformanceArray[c].gameFunctionTime;
 		var height2 = preformanceArray[c].AICanvasFunctionTime;
 
-
+		ctx.beginPath();
+		ctx.rect(c*pixelSize, canvas.height - (height2+1)*pixelSize, pixelSize, pixelSize);
+		if(height2 > 10) {
+			ctx.fillStyle = "#FF0000";
+		}
+		else {
+			ctx.fillStyle = "#00FF00";
+		}
+		ctx.fill();
+		ctx.closePath();
 
 		ctx.beginPath();
 		ctx.rect(c*pixelSize, canvas.height - (height1+1)*pixelSize, pixelSize, pixelSize);
-		ctx.fillStyle = "#009900";
+
+		if(height1 > 10) {
+			ctx.fillStyle = "#990000";
+		}
+		else {
+			ctx.fillStyle = "#009900";
+		}
 		ctx.fill();
 		ctx.closePath();
 
@@ -58,8 +73,6 @@ function draw() {
 		calculatePreformanceArray();
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		drawPreformanceMonitor();
-		console.log(preformanceArray.gameFunctionTime);
-		console.log(game.functionTimes[0]);
 	}
 }
 

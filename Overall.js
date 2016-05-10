@@ -16,10 +16,20 @@ var game1 = {
 	rows : 8,
 	bricks : [],
 	input : [],
+	output : [],
 	pushLeft : false,
 	pushRight : false,
-	functionTimes : []
+	functionTimes : [],
+	flags : false
 };
+
+game1.flags = {
+	leftFlag: false, 
+	rightFlag: false, 
+	humanPlayer: false
+};
+
+console.log(game1.flags);
 
 brickBreaker(game1, canvas1);
 //activateAI(game1);

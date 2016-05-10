@@ -16,7 +16,7 @@ var initialDx = game.dx;
 var initialDy = game.dy;
 var dyOld = game.dy;
 var dxOld = game.dx;
-const velLength = Math.sqrt(game.dx*game.dx+game.dy*game.dy);	
+const velLength = Math.sqrt(game.dx*game.dx+game.dy*game.dy); 
 
 var rightPressed = false;
 var leftPressed = false;
@@ -45,6 +45,10 @@ var brickOffsetLeft = 40;
 var score = 0;
 var lives = 3;
 var highScore = 0;
+var dx = 0;
+var ddx = 1
+var dxLimit = 7; 
+var paddleDamperTimer = 0;
 
 for(c=0; c<brickColumnCount; c++) {
 	game.bricks[c] = [];
@@ -80,15 +84,15 @@ function keyUpHandler(e) {
 	}
 }
 
-function mouseMoveHandler(e) {
-	var relativeX = e.clientX - canvas.offsetLeft;
-	if(relativeX > 0 && relativeX < canvas.width) {
-		game.paddleX = relativeX - paddleRadius;
-	}
+//This function allows the padde to be controlled by the mouse as well as the arrowkeys if uncommented. 
+function mouseMoveHandler(e) { ;
+// 	var relativeX = e.clientX - canvas.offsetLeft;
+// 	if(relativeX > 0 && relativeX < canvas.width) {
+// 		game.paddleX = relativeX - paddleRadius;
+// 	}
 }
 
-function calculateFitness() {
-	game.fitness = game.fitness + score/game.gameTime;
+function calculateFitness() {	game.fitness = game.fitness + score/game.gameTime;
 }
 
 function drawScore() {
@@ -164,12 +168,10 @@ function drawBricks() {
 	}
 }
 
-function toRadians (angle) {
-	return angle * (Math.PI / 180);
+function toRadians (angle) { return angle * (Math.PI / 180);
 }
 
-function toDegrees (angle) {
-	return angle * (180 / Math.PI);
+function toDegrees (angle) { return angle * (180 / Math.PI);
 }
 
 function collisionDetection() {
@@ -213,7 +215,7 @@ function handleBall() {
 	} 
 	distance = Math.sqrt((game.x-paddleCentreX)*(game.x-paddleCentreX)+(game.y-paddleCentreY)*(game.y-paddleCentreY));
 	if(distance < (ballRadius + paddleRadius)) {
-		paddleCollision(game.x,game.y,game.dx,game.dy);
+		paddleCollision();
 	}
 	else if(game.y + game.dy > canvas.height-ballRadius) {
 		lives--;
@@ -240,37 +242,69 @@ function paddleCollision() {
 	ballAngle = Math.atan2(-game.dy,game.dx);
 	paddleAngle = Math.atan2(-(game.y-paddleCentreY),(game.x-paddleCentreX));			
 	newAngle = Math.PI + 2*paddleAngle - ballAngle;
+	if(newAngle < toRadians(10) && newAngle > 0 ) { newAngle = toRadians(10); console.log("Abjusted Angle: "+toDegrees(newAngle)); }
+	if(newAngle > toRadians(170) && newAngle < Math.PI) { newAngle = toRadians(170); console.log("Abjusted Angle: "+toDegrees(newAngle)); }
 	if(game.dy >= 0)	{
 		game.dx = velLength*Math.cos(newAngle);
 		game.dy = -velLength*Math.sin(newAngle); 
 	}
 } 
 
+function handlePaddle() {
 
+	if(leftPressed && game.flags.humanPlayer) {
+		game.flags.leftFlag = true;
+	}
+	else if(rightPressed && game.flags.humanPlayer) {
+		game.flags.rightFlag = true;
+	}
+	else if(game.flags.humanPlayer){
+		game.flags.leftFlag = false;
+		game.flags.rightFlag = false;
+	}
+
+	paddleCentreX = game.paddleX+paddleRadius;
+	paddleDamperTimer++;
+
+	if(paddleCentreX  < 0 || paddleCentreX  > canvas.width) {
+		dx = -dx;
+	}
+	game.paddleX += dx;
+	if(game.flags.rightFlag && !game.flags.leftFlag && dx < dxLimit) {
+		dx += ddx;
+	}
+	else if(game.flags.leftFlag && !game.flags.rightFlag && dx > -dxLimit) {
+		dx -= ddx;
+	}
+	if(paddleDamperTimer >= 5 && dx !=0) {
+		if(dx > 0) {dx--;} else {dx++; }
+		paddleDamperTimer = 0;
+	}
+}
 
 function draw() {
 		
 	var d = new Date();
-
 	if(!spaceFlag)
 	{
 		game.gameTime += 0.02;
-		//paddleX = x - paddleRadius;
-		paddleCentreX = game.paddleX+paddleRadius;
-		paddleCentreY = canvas.height+paddleRadius/Math.sqrt(2);
+		if(!game.flags.humanPlayer) {
+			game.output = applySolution(game.input);
+			game.flags.leftFlag = game.output[0];
+			game.flags.rightFlag = game.output[1];
+		}
+		handlePaddle();
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		collisionDetection();
 		handleBall();
 		drawBall();
 		drawPaddle();
-		//collisionDetection();
 		drawBricks();
 		drawScore();
 		drawLives();
 		drawVelocity();
 		drawVelocityIndicator();
 	}
-
 	var n = new Date();
 	game.functionTimes[0] = n - d;
 }

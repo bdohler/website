@@ -31,7 +31,6 @@ function constructInputArray(){
 	console.log("constructInputArray complete");
 }
 	
-
 function keyDownHandler(e) {
 	if(e.keyCode == 32) {
 		spaceFlag = !spaceFlag;
@@ -50,6 +49,7 @@ function setBall() {
 	ballPreviousY = Math.floor(game.y/bigPixelSize);
 	ballPreviousX = Math.floor(game.x/bigPixelSize);
 	game.input[ballPreviousX][ballPreviousY].ball = true; 
+	if(game.input[8][12].ball == true) { console.log("You've crossed 8,12"); }
 }
 
 function setPaddle() {
@@ -94,12 +94,10 @@ function setBrick() {
 
 function setVelocity () {
 	var angle = Math.atan2(game.dy,game.dx)
-//	angle = angle * (180 / Math.PI);
 	game.input[velocityPreviousX][velocityPreviousY].velocity = false;
 	velocityPreviousX = Math.floor((55+3*littlePixelSize*Math.cos(angle))/littlePixelSize);
 	velocityPreviousY = Math.floor((55+3*littlePixelSize*Math.sin(angle))/littlePixelSize);
 	game.input[velocityPreviousX][velocityPreviousY].velocity = true; 	
-
 }
 
 function drawInputArray() {
@@ -159,14 +157,14 @@ function drawInputArray() {
 }
 
 function draw() {
-
-	var n = d.getTime();
+	var d = new Date();
 	if(!spaceFlag) {
 		setInputArray();
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		drawInputArray();
 	}
-	game.functionTimes[1] = d.getTime() - n;
+	var n = new Date();
+	game.functionTimes[1] = n - d;
 }
 
 constructInputArray(); 
