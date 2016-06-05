@@ -37,8 +37,8 @@ function getBricks() {
     for(c=0; c<game.columns; c++) {
         for(r=0; r<game.rows; r++) {
             
-            bricks[bricks.length] = game.input[2*c+2][r+2].brick;
-            bricks[bricks.length] = game.input[2*c+3][r+2].brick;
+            bricks.push(game.input[2*c+2][r+2].brick);
+            bricks.push(game.input[2*c+3][r+2].brick);
         } 
         if(onInit) {
         //console.log((2*c+2)+" "+(r+2));
@@ -53,7 +53,7 @@ function getBricks() {
 function getPaddle() {
     var paddle = [];
     for(var c=0; c < inputWidth; c++) {
-        paddle[c] = game.input[c][15].paddle;
+        paddle.push(game.input[c][15].paddle);
     }
     //console.log("inputWidth: "+inputWidth);
     //console.log(paddle.length);
@@ -64,16 +64,16 @@ function getVelocity() {
     var velocity = [];
 
     for( var c = 2; c <= 7; c++) {
-        velocity[velocity.length] = game.input[1][c].velocity;
-        velocity[velocity.length] = game.input[8][c].velocity;
-        velocity[velocity.length] = game.input[c][1].velocity;
-        velocity[velocity.length] = game.input[c][8].velocity;        
+        velocity.push(game.input[1][c].velocity);
+        velocity.push(game.input[8][c].velocity);
+        velocity.push(game.input[c][1].velocity);
+        velocity.push(game.input[c][8].velocity);        
     }
 
-    velocity[velocity.length] = game.input[2][2].velocity;
-    velocity[velocity.length] = game.input[2][7].velocity;
-    velocity[velocity.length] = game.input[7][2].velocity;
-    velocity[velocity.length] = game.input[7][7].velocity;
+    velocity.push(game.input[2][2].velocity);
+    velocity.push(game.input[2][7].velocity);
+    velocity.push(game.input[7][2].velocity);
+    velocity.push(game.input[7][7].velocity);
 
     //onsole.log(velocity.length);
     return velocity;
@@ -83,7 +83,7 @@ function getBall() {
     var ball = [];
     for(var c = 0; c < inputWidth; c++) {
         for(var r = 0; r < inputHeight; r++) {
-            ball[ball.length]=game.input[c][r].ball;
+            ball.push(game.input[c][r].ball);
         }
     }
     //console.log(ball.length);
