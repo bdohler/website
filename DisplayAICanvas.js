@@ -1,21 +1,15 @@
-function displayAICanvas(game, canvas ) {
-	
-var d = new Date();
+var displayAICanvas = (function (game, canvas, onInit) {
 
-var ctx = canvas2.getContext("2d");
+var ctx = canvas.getContext("2d");
 var bigPixelSize = 20;
 var littlePixelSize = 10;
 var inputWidth = 480/bigPixelSize;
 var inputHeight = 320/bigPixelSize;
-var spaceFlag = false;
 var ballPreviousX = 0;
 var ballPreviousY = 0;
 var velocityPreviousX = 0;
 var velocityPreviousY = 0;
 var paddleRadius = 80;
-
-console.log("inputWidth:"+inputWidth);
-console.log("inputHeight:"+inputHeight);
 
 function constructInputArray(){
 	for(c=0; c<inputWidth; c++) {
@@ -28,15 +22,9 @@ function constructInputArray(){
 				velocity: false };
 		}
 	}
-	console.log("constructInputArray complete");
+	//console.log("constructInputArray complete");
 }
 	
-function keyDownHandler(e) {
-	if(e.keyCode == 32) {
-		spaceFlag = !spaceFlag;
-	}
-}
-
 function setInputArray() {
 	setBall();
 	setPaddle();
@@ -62,22 +50,11 @@ function setPaddle() {
 			((c*2+1)*littlePixelSize-paddleCentreX)+
 			((15*2+1)*littlePixelSize-paddleCentreY)*
 			((15*2+1)*littlePixelSize-paddleCentreY));
-		var distance2 =Math.sqrt(
-			((c*2+1)*littlePixelSize-paddleCentreX)*
-			((c*2+1)*littlePixelSize-paddleCentreX)+
-			((14*2+1)*littlePixelSize-paddleCentreY)*
-			((14*2+1)*littlePixelSize-paddleCentreY));
 		if(distance1 < paddleRadius) {
 			game.input[c][15].paddle = true; 	
 		}
 		else {
 			game.input[c][15].paddle = false; 
-		}
-		if(distance2 < paddleRadius) {
-			game.input[c][14].paddle = true; 
-		}
-		else {
-			game.input[c][14].paddle = false; 
 		}
 	}
 }
@@ -85,18 +62,17 @@ function setPaddle() {
 function setBrick() {
 	for(c=0; c<game.columns; c++) {
 		for(r=0; r<game.rows; r++) {
-			//console.log("Changing value in cell:["+(2*c)+"]["+(2*r)+"]");
 			game.input[2*c+2][r+2].brick = game.bricks[c][r].status;
 			game.input[2*c+3][r+2].brick = game.bricks[c][r].status;
-		}  
+		} 
 	} 
 }
 
 function setVelocity () {
-	var angle = Math.atan2(game.dy,game.dx)
+	var angle = Math.atan2(game.dy,game.dx);
 	game.input[velocityPreviousX][velocityPreviousY].velocity = false;
-	velocityPreviousX = Math.floor((55+3*littlePixelSize*Math.cos(angle))/littlePixelSize);
-	velocityPreviousY = Math.floor((55+3*littlePixelSize*Math.sin(angle))/littlePixelSize);
+	velocityPreviousX = Math.floor((50+4*littlePixelSize*Math.cos(angle))/littlePixelSize);
+	velocityPreviousY = Math.floor((50+4*littlePixelSize*Math.sin(angle))/littlePixelSize);
 	game.input[velocityPreviousX][velocityPreviousY].velocity = true; 	
 }
 
@@ -154,20 +130,26 @@ function drawInputArray() {
 
 		}
 	}
+	ctx.beginPath();
+	ctx.rect(55, 55, 1, 1);
+	ctx.fillStyle = "#FFFFFF";
+	ctx.fill();
 }
 
-function draw() {
-	var d = new Date();
-	if(!spaceFlag) {
+return {
+	draw: function (game, canvas, onInit) {
+
+		if(onInit) {
+			constructInputArray(); 
+		}
+
+		var d = new Date();
 		setInputArray();
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		drawInputArray();
+		var n = new Date();
+		game.functionTimes[1] = n - d;
 	}
-	var n = new Date();
-	game.functionTimes[1] = n - d;
-}
+};
 
-constructInputArray(); 
-setInterval(draw, 20);
-
-}
+});

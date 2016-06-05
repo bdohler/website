@@ -10,28 +10,22 @@
 	</head>
 	<body>
 
-
-		The actual game with all its dynamics is shown here:<br><br>
-		<canvas id="gameCanvas" width="480" height="320"></canvas><br>
-
-		The input and output of the AI, as well as its internal NN, is shown here:<br><br>
-
-		<canvas id="AICanvas" width="240" height="160"></canvas><br>
+		<br><canvas id="gameCanvas" width="480" height="320"></canvas><br>
+		<canvas id="AICanvas" width="480" height="160"></canvas><br>
 		<canvas id="preformanceCanvas" width="240" height="80"></canvas><br>
-		<button id="e"> Export Save File </button><br><br>
 		
 		
-		<input type="file" id="files" name="files" /><br><br>
-		<button id="i"> Upload Save File </button><br><br>
-		Save File Contents: <div id="file_content"></div>
+		Human Player: <input type="checkbox" id="humanPlayer" name="humanPlayer"><br>
+		<button id="e"> Export Save File </button><br>
+		<input type="file" id="files" name="files"/><br>
+		<button id="i"> Upload Save File </button><br>
+		Save File Contents: 
+		<div id="file_content"></div>
 		<div id="status"></div>
 		
 		<script type="text/javascript" src="NEAT.js"></script>
 		<script type="text/javascript" src="BrickBreaker.js" ></script>
-		<script type="text/javascript" src="Export.js" ></script>
-		<script type="text/javascript" src="Import.js" ></script>
-		<script type="text/javascript" src="ParseSaveFile.js" ></script>
-		<script type="text/javascript" src="ConcatenateSaveFile.js" ></script>
+		<script type="text/javascript" src="ImportExport.js" ></script>
 		<script type="text/javascript" src="DisplayAICanvas.js"></script>
 		<script type="text/javascript" src="Preformance.js"></script>
 		<script type="text/javascript" src="Overall.js"></script>

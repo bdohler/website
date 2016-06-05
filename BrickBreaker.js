@@ -1,60 +1,67 @@
+var brickBreaker = (function (game, canvas, onInit) {
 
+console.log("Inititiating brickBreaker Function");
 
-function brickBreaker(game, canvas) {
-
-
-
-//console.log("Inititiating brickBreaker Function");
 var ctx = canvas.getContext("2d");
 
-var ballRadius = 5, initialX = canvas.width/2;
-var initialY = canvas.height-150;
-game.x = initialX;
-game.y = initialY;
+var rightPressed;
+var leftPressed;
+var collision;
 
-var initialDx = game.dx;
-var initialDy = game.dy;
-var dyOld = game.dy;
-var dxOld = game.dx;
-const velLength = Math.sqrt(game.dx*game.dx+game.dy*game.dy); 
-
-var rightPressed = false;
-var leftPressed = false;
-var spaceFlag = false;
-
-var paddleRadius = 80;
-var paddleHeight = 10;
-var paddleWidth = 150;
-game.paddleX = canvas.width/2-paddleRadius;
-var paddleBuffer = 50; 
-var collision = false;
+const paddleRadius = 80;
 var paddleCentreX = game.paddleX+paddleRadius;
-var paddleCentreY = canvas.height+paddleRadius/Math.sqrt(2);
+const paddleCentreY = canvas.height+paddleRadius/Math.sqrt(2);
 var distance = Math.sqrt((game.x-paddleCentreX)*(game.x-paddleCentreX)+(game.y-paddleCentreY)*(game.y-paddleCentreY));
 var ballAngle;
 var paddleAngle;
 var newAngle;
-
-var brickRowCount = game.rows;
-var brickColumnCount = game.columns;
-var brickWidth = 40;
-var brickHeight = 20;
-var brickPadding = 0;
-var brickOffsetTop = 40;
-var brickOffsetLeft = 40;
-var score = 0;
-var lives = 3;
-var highScore = 0;
-var dx = 0;
-var ddx = 1
-var dxLimit = 7; 
+var score;
+var lives;
+var dx;
 var paddleDamperTimer = 0;
 
-for(c=0; c<brickColumnCount; c++) {
-	game.bricks[c] = [];
-	for(r=0; r<brickRowCount; r++) {
-		game.bricks[c][r] = { x: 0, y: 0, status: 1 };
+const ballRadius = 5;
+const initialX = canvas.width/2;
+const initialY = canvas.height-150;
+const initialDx = -3.0;
+const initialDy = 3.0;
+const velLength = Math.sqrt(game.dx*game.dx+game.dy*game.dy); 
+const paddleHeight = 10;
+const paddleWidth = 150;
+const paddleBuffer = 50; 
+const brickRowCount = game.rows;
+const brickColumnCount = game.columns;
+const brickWidth = 40;
+const brickHeight = 20;
+const brickPadding = 0;
+const brickOffsetTop = 40;
+const brickOffsetLeft = 40;
+const ddx = 1;
+const dxLimit = 7; 
+
+function restartGame() {
+
+	//console.log("Executing Restart in BrickBreaker.js");	
+	for(c=0; c<brickColumnCount; c++) {
+		game.bricks[c] = []; 
+		for(r=0; r<brickRowCount; r++) {
+			game.bricks[c][r] = { x: 0, y: 0, status: true };
+		}
 	}
+	score = 0;
+	lives = 1;
+	collision = false;
+	rightPressed = false;
+	leftPressed = false;
+
+	game.x = initialX;
+	game.y = initialY;
+	game.dx = initialDx;
+	game.dy = initialDy;
+	dx = 0;
+	game.paddleX = canvas.width/2-paddleRadius;
+	game.gameTime = 0;
+
 }
 
 //console.log("Constructed bricks array");
@@ -70,9 +77,6 @@ function keyDownHandler(e) {
 	else if(e.keyCode == 37) {
 		leftPressed = true;
 	}
-	else if(e.keyCode == 32) {
-		spaceFlag = !spaceFlag;
-	}
 }
 
 function keyUpHandler(e) {
@@ -80,7 +84,7 @@ function keyUpHandler(e) {
 		rightPressed = false;
 	}
 	else if(e.keyCode == 37) {
-    leftPressed = false;
+    	leftPressed = false;
 	}
 }
 
@@ -92,7 +96,8 @@ function mouseMoveHandler(e) { ;
 // 	}
 }
 
-function calculateFitness() {	game.fitness = game.fitness + score/game.gameTime;
+function calculateFitness() {	
+	game.fitness = score - game.gameTime;
 }
 
 function drawScore() {
@@ -100,8 +105,6 @@ function drawScore() {
 	ctx.font = "16px Arial";
 	ctx.fillStyle = "#000000";
 	ctx.fillText("Score: "+score, 8, 20);
-	highScore = (score > highScore) ? score : highScore;
-	ctx.fillText("High Score: "+highScore, 8, 40);
 	ctx.fillText("Fitness: "+game.fitness.toFixed(2),8,60);
 }
 
@@ -148,7 +151,7 @@ function drawPaddle() {
 function drawBricks() {
 	for(c=0; c<brickColumnCount; c++) {
 		for(r=0; r<brickRowCount; r++) {
-			if(game.bricks[c][r].status == 1) {
+			if(game.bricks[c][r].status == true) {
 				var brickX = (c*(brickWidth+brickPadding))+brickOffsetLeft;
 				var brickY = (r*(brickHeight+brickPadding))+brickOffsetTop;
 				game.bricks[c][r].x = brickX;
@@ -178,11 +181,11 @@ function collisionDetection() {
 	for(c=0; c<brickColumnCount; c++) {
 		for(r=0; r<brickRowCount; r++) {
 			var b = game.bricks[c][r];
-			if(b.status == 1) {
+			if(b.status == true) {
 				if(game.x >= b.x && game.x <= b.x+brickWidth && game.y >= b.y && game.y <= b.y+brickHeight) {
 					//dy = -dy;
-					b.status = 0;
-					score++;
+					b.status = false;
+					score += 3;
 
 					if(score == brickRowCount*brickColumnCount) {
 						alert("Congrats, your time is "+game.gameTime.toFixed(2)+"s!");
@@ -220,16 +223,15 @@ function handleBall() {
 	else if(game.y + game.dy > canvas.height-ballRadius) {
 		lives--;
 		if(!lives) {
-			//alert("Ha Ha. If you're an AI, you're about to be bred out of the gene pool.");
-			document.location.reload();
+			if(game.flags.humanPlayer) {
+				alert("Ha Ha. If you're were an AI, you'd be about to be bred out of the gene pool.");
+			}
+			else if(!game.flags.humanPlayer) {
+				game.flags.gameLostByAI = true;
+			}
+			lives = 1;
 		}
-		else {
-			game.x = initialX;
-			game.y = initialY;
-			game.dx = initialDx;
-			game.dy = initialDy;
-			game.paddleX = canvas.width/2-paddleRadius;
-		}	
+		restartGame();
 	}
 					
 	game.x += game.dx;
@@ -242,8 +244,8 @@ function paddleCollision() {
 	ballAngle = Math.atan2(-game.dy,game.dx);
 	paddleAngle = Math.atan2(-(game.y-paddleCentreY),(game.x-paddleCentreX));			
 	newAngle = Math.PI + 2*paddleAngle - ballAngle;
-	if(newAngle < toRadians(10) && newAngle > 0 ) { newAngle = toRadians(10); console.log("Abjusted Angle: "+toDegrees(newAngle)); }
-	if(newAngle > toRadians(170) && newAngle < Math.PI) { newAngle = toRadians(170); console.log("Abjusted Angle: "+toDegrees(newAngle)); }
+	if(newAngle < toRadians(20) && newAngle > 0 ) { newAngle = toRadians(20); console.log("Abjusted Angle: "+toDegrees(newAngle)); }
+	if(newAngle > toRadians(160) && newAngle < Math.PI) { newAngle = toRadians(160); console.log("Abjusted Angle: "+toDegrees(newAngle)); }
 	if(game.dy >= 0)	{
 		game.dx = velLength*Math.cos(newAngle);
 		game.dy = -velLength*Math.sin(newAngle); 
@@ -276,22 +278,26 @@ function handlePaddle() {
 	else if(game.flags.leftFlag && !game.flags.rightFlag && dx > -dxLimit) {
 		dx -= ddx;
 	}
-	if(paddleDamperTimer >= 5 && dx !=0) {
+	if(paddleDamperTimer >= 5 && dx !==0) {
 		if(dx > 0) {dx--;} else {dx++; }
 		paddleDamperTimer = 0;
 	}
 }
 
-function draw() {
-		
-	var d = new Date();
-	if(!spaceFlag)
-	{
+
+return {
+	draw: function (game, canvas, onInit) {
+
+		if(onInit) {
+			restartGame();
+		}	
+		//console.log("Executing Draw in BrickBreaker.js");		
+		var d = new Date();
+
 		game.gameTime += 0.02;
 		if(!game.flags.humanPlayer) {
-			game.output = applySolution(game.input);
-			game.flags.leftFlag = game.output[0];
-			game.flags.rightFlag = game.output[1];
+			game.flags.leftFlag = game.output[0]; //Output is generated externally in NEAT.js by evaluateCurrent();
+			game.flags.rightFlag = game.output[1]; //Output is generated externally in NEAT.js by evaluateCurrent();
 		}
 		handlePaddle();
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -304,11 +310,12 @@ function draw() {
 		drawLives();
 		drawVelocity();
 		drawVelocityIndicator();
+		
+		var n = new Date();
+		game.functionTimes[0] = n - d;
 	}
-	var n = new Date();
-	game.functionTimes[0] = n - d;
-}
+};
 
-setInterval(draw, 20);
 
-}
+});
+
