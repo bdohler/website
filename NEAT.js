@@ -184,7 +184,7 @@ function copyGenome(genome) {
 
         var genome2 = newGenome();
         for (g=0; g < genome.genes.length; g++) {
-        	tableInsert(genome2.genes, copyGene(genome.genes[g]));
+          genome2.genes[g] = copyGene(genome.genes[g]);
         }
         genome2.maxneuron = genome.maxneuron;
         genome2.mutationRates.connections = genome.mutationRates.connections;
@@ -210,7 +210,7 @@ function basicGenome() {
         var genome = newGenome();
         //TODO: determine effect
         var innovation = 0;
-        genome.maxneuron = Inputs;
+        genome.maxneuron = Inputs - 1;
         console.log("Mutating Genome");
         mutate(genome);
         console.log("Returning basicGenome");
@@ -265,24 +265,23 @@ function generateNetwork(genome) {
         }
        
        	//Sort the genome based on the order of the output of the genes. 
-        tableSort(genome.genes, function (a,b) {
-                return (a.out < b.out);
+        genome.genes.sort(function(a, b) {
+            return (a.out < b.out);
         });
 
         //Interate through the genome && build a neuron where required for each active genome.
-        for (var i=0; i < genome.genes.length; i++) {
-                var gene = genome.genes[i];
+        genome.genes.forEach(function(gene) {
                 if(gene.enabled) {
                         if (network.neurons[gene.out] == undefined) {
                                 network.neurons[gene.out] = newNeuron();
                         }
                         var neuron = network.neurons[gene.out];
-                        tableInsert(neuron.incoming, gene);
+                        neuron.incoming.push(gene);
                         if (network.neurons[gene.into] == undefined) {
                         		network.neurons[gene.into] = newNeuron();
                         }              	
                 }
-        } 
+        });
         genome.network = network;
         //console.log("Generated network is: "+JSON.stringify(genome.network,null,4));
 }
@@ -297,48 +296,29 @@ function evaluateNetwork(network, inputs) {
 		// //console.log("last output is:"+network.neurons[Inputs-1]);
 		// console.log(JSON.stringify(network.neurons[Inputs-1], null, 4));
 		// console.log(JSON.stringify(network.neurons[Inputs], null, 4));
-  //      // tableInsert(inputs, 0);
+      //  tableInsert(inputs, 0);
         if (inputs.length != Inputs) {
-        		console.log("Incorrect number of neural network inputs.");
+        		console.error("Incorrect number of neural network inputs.");
                 return {};
         }
         for (i=0; i < Inputs; i++) {
         		network.neurons[i].value = inputs[i];
         }
 
-        //Iffy translation	
-        var k = 0;
-        while(network.neurons[k] !== undefined) {
-        		var sum = 0;
-        		var neuron = network.neurons[k]; //Especially iffy translation
-
-        		for(var j = 0; j < neuron.incoming.length; j++) {
-						var incoming = neuron.incoming[j];
-						var other = network.neurons[incoming.into];
-						sum = sum + incoming.weight*other.value;
-				}
-				if(neuron.incoming.length > 0) {
-					neuron.value = sigmoid(sum);
-				}
-				k++;
-        }
-        var k = MaxNodes;
-        while(network.neurons[k] !== undefined) {
-        		if(k == MaxNodes) {
-        			//console.log(JSON.stringify(network.neurons[k],null,4));	
-        		}
-        		var sum = 0;
-        		var neuron = network.neurons[k]; //Especially iffy translation
-        		for(var j = 0; j < neuron.incoming.length; j++) {
-						var incoming = neuron.incoming[j];
-						var other = network.neurons[incoming.into];
-						sum = sum + incoming.weight*other.value;
-				}
-				if(neuron.incoming.length > 0) {
-					neuron.value = sigmoid(sum);
-				}
-				k++;
-        }
+        network.neurons.forEach(function(neuron) {
+          if(!neuron) {
+            return;
+          }
+          var sum = 0;
+          neuron.incoming.forEach(function(incoming) {
+            var other = network.neurons[incoming.into];
+            sum += incoming.weight * other.value;
+          });
+          if(neuron.incoming.length > 0) {
+            neuron.value = sigmoid(sum);
+          }
+        });
+        
         //console.log("Output neuron values are:"+network.neurons[MaxNodes].value+" and "+network.neurons[MaxNodes].value);
         var outputs = [];
         for (var o=0; o < Outputs; o++) {
@@ -350,7 +330,7 @@ function evaluateNetwork(network, inputs) {
                 		outputs[o] = true;
                 } 
                 else {
-                        outputs[o] = false;            	
+                    outputs[o] = false;            	
                 }
 
         } 
@@ -361,7 +341,7 @@ function evaluateNetwork(network, inputs) {
 function crossover(g1, g2) {
         // Make sure g1 is the higher fitness genome
         if (g2.fitness > g1.fitness) {
-                tempg = g1;
+                var tempg = g1;
                 g1 = g2;
                 g2 = tempg;
         }
@@ -369,25 +349,24 @@ function crossover(g1, g2) {
         var child = newGenome();
        
         var innovations2 = [];
-        for (var i=0; i < g2.genes.length; i++) {
-                var gene = g2.genes[i];
-                innovations2[gene.innovation] = gene;
-        }
+        g2.genes.forEach(function(gene) {
+            innovations2[gene.innovation] = gene;
+        });
        
-        for (var i=0; i < g1.genes.length; i++) {
-                var gene1 = g1.genes[i];
-                var gene2 = innovations2[gene1.innovation];
-                if (gene2 !== undefined && Math.random(2) < 0.5 && gene2.enabled) {
-                        tableInsert(child.genes, copyGene(gene2));
-                }
-                else {
-                        tableInsert(child.genes, copyGene(gene1));                	
-                }
-        }
+        g1.genes.forEach(function(gene1) {
+          var gene2 = innovations2[gene1.innovation];
+          if(gene2 !== undefined && Math.random() < 0.5 && gene2.enabled) {
+            child.genes.push(copyGene(gene2));
+          } else {
+            child.genes.push(copyGene(gene1));
+          }
+        });
 
         child.maxneuron = Math.max(g1.maxneuron,g2.maxneuron);       	
-       	//Iffy translation again
-       	child.mutationRates = g1.mutationRates;
+       	
+        Object.keys(g1.mutationRates).forEach(function(mutation) {
+          child.mutationRates[mutation] = g1.mutationRates[mutation];
+        });
        
         return child;
 }
@@ -405,71 +384,44 @@ function randomNeuron(genes, nonInput) {
         }
         console.log("randomNeuron: Initialized inputs and outputs to true");
 
+        genes.forEach(function(gene) {
+          if(!nonInput || gene.into >= Inputs) {
+            neurons[gene.into] = true;
+          }
+          if(!nonInput || gene.out >= Inputs) {
+            neurons[gene.out] = true;
+          }
+        });
+        
+        var trueNeurons = neurons.filter(function(e) {return e == true;});
 
-        for (var i=0; i < genes.length; i++) {
-                if (!nonInput || genes[i].into > Inputs) {
-                		neurons[genes[i].into] = true;
-                }
-                if (!nonInput || genes[i].out > Inputs) {
-                        neurons[genes[i].out] = true;
-                }
-        }
- 
-        var count = 0
-        var j = 0
-        while(neurons[j] !== undefined) {
-        		count++;
-        		j++;
-        }
+        var count = trueNeurons.length;
 
-        k = 0;
-        while(neurons[MaxNodes+k] !== undefined) {
-        		k++;
-        		count++;
-        }
-
-        var n = randomIntFromInterval(0,count-1);
-       	
-       	if ( n < j ) {
-       			console.log("Returning randomNeuron: returning an input or hidden node");
-       			return n;
-       	}
-
-       	else if (n - j < k ) {
-       			console.log("Returning randomNeuron: returning an output");
-       			return MaxNodes + n - j;
-       	}
-
-       	console.log("randomNeuron function count failure"); {
-       		return -1;
-       	}
+        return Object.keys(neurons)[randomIntFromInterval(0, count)];
 }
 
 function randomIntFromInterval(min, max) {
-    	return Math.floor(Math.random()*(max-min+1)+min);
+    	return Math.floor(Math.random()*(max-min)+min);
 }
 
 function containsLink(genes, link) {
-		for( var i = 0; i < genes.length; i++ ) {
-				var gene = genes[i];
-				if(gene.into == link.into && gene.out == link.out) {
-						return true;
-				}
-		}
-		return false;
+  genes.forEach(function(gene) {
+    if(gene.into == link.into && gene.out == link.out) {
+      return true;
+    }
+  });
+  return false;
 }
 
 function pointMutate(genome) {
 		var step = genome.mutationRates.step;
-		for( var i = 0; i < genome.genes.length; i++ ) {
-				var gene = genome.genes[i];
-				if(Math.random() < PerturbChance) {
-						gene.weight = gene.weight + Math.random() * step*2 - step;
-				}
-				else {
-					gene.weight = Math.random()*4-2;
-				}
-		}
+    genome.genes.forEach(function(gene) {
+      if(Math.random() < PerturbChance) {
+        gene.weight += Math.random() * step * 2 - step;
+      } else {
+        gene.weight = Math.random() * 4 - 2;
+      }
+    });
 }
         
 function linkMutate(genome, forceBias) {
@@ -479,12 +431,12 @@ function linkMutate(genome, forceBias) {
         var neuron2 = randomNeuron(genome.genes, true);
         
         var newLink = newGene();
-        if ( neuron1 <= Inputs && neuron2 <= Inputs) {
+        if ( neuron1 < Inputs && neuron2 < Inputs) {
                 //Both input nodes
                 console.log("Returning linkMutate: Both neurons are input nodes - Very likely");
                 return;
         }
-        if ( neuron2 <= Inputs ) {
+        if ( neuron2 < Inputs ) {
                 //Swap output and input
                 var temp = neuron1;
                 neuron1 = neuron2;
@@ -494,7 +446,7 @@ function linkMutate(genome, forceBias) {
         newLink.into = neuron1;
         newLink.out = neuron2;
         if ( forceBias ) {
-                newLink.into = Inputs;
+                newLink.into = Inputs-1;
         }
        
         if ( containsLink(genome.genes, newLink)) {
@@ -504,7 +456,7 @@ function linkMutate(genome, forceBias) {
         newLink.innovation = newInnovation();
         newLink.weight = Math.random()*4-2;
        
-        tableInsert(genome.genes, newLink);	
+        genome.genes.push(newLink);
         console.log("Returning linkMutate: added new link");
 }
 
@@ -515,7 +467,7 @@ function nodeMutate(genome) {
  
         genome.maxneuron = genome.maxneuron + 1;
  
-        var gene = genome.genes[randomIntFromInterval(0,genome.genes.length-1)];
+        var gene = genome.genes[randomIntFromInterval(0,genome.genes.length)];
         if ( !gene.enabled ) {
                 return;
         }
@@ -526,13 +478,13 @@ function nodeMutate(genome) {
         gene1.weight = 1.0;
         gene1.innovation = newInnovation();
         gene1.enabled = true;
-        tableInsert(genome.genes, gene1);
+        genome.genes.push(gene1);
        
         var gene2 = copyGene(gene);
         gene2.into = genome.maxneuron;
         gene2.innovation = newInnovation();
         gene2.enabled = true;
-        tableInsert(genome.genes, gene2);
+        genome.genes.push(gene2);
 }
 
 function enableDisableMutate(genome, enable) {
@@ -545,7 +497,7 @@ function enableDisableMutate(genome, enable) {
         if (candidates.length == 0) {
                 return;
         }       
-        var gene = candidates[randomIntFromInterval(0,candidates.length-1)];
+        var gene = candidates[randomIntFromInterval(0,candidates.length)];
         gene.enabled = !gene.enabled;
 }
 
@@ -554,7 +506,7 @@ function mutate(genome) {
 
 		var obj = genome.mutationRates;
 		Object.getOwnPropertyNames(obj).forEach(function(val, idx, array) {
-    			if(randomIntFromInterval(1,2)==1) {
+    			if(randomIntFromInterval(1,3)==1) {
     					obj[val] = 0.95*obj[val];
     			}
     			else {
@@ -735,12 +687,12 @@ function tableRemove(arr) {
 function breedChild(species) {
         var child = {};
         if (Math.random() < CrossoverChance) {
-                var g1 = species.genomes[randomIntFromInterval(0, species.genomes.length-1)];
-                var g2 = species.genomes[randomIntFromInterval(0, species.genomes.length-1)];
+                var g1 = species.genomes[randomIntFromInterval(0, species.genomes.length)];
+                var g2 = species.genomes[randomIntFromInterval(0, species.genomes.length)];
                 child = crossover(g1, g2);
         }
         else {
-                g = species.genomes[randomIntFromInterval(0, species.genomes.length-1)];
+                g = species.genomes[randomIntFromInterval(0, species.genomes.length)];
                 child = copyGenome(g);
         }
        
@@ -842,7 +794,7 @@ function newGeneration() {
         cullSpecies(true); // Cull all but the top member of each species
         console.log("culled all but the top member of each species");
         while (children.length + pool.species.length < Population) {
-                var species = pool.species[randomIntFromInterval(0, pool.species.length-1)];
+                var species = pool.species[randomIntFromInterval(0, pool.species.length)];
                 tableInsert(children, breedChild(species));
         }
         for (var c=0; c < children.length; c++) {
