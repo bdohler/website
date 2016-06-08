@@ -61,32 +61,34 @@ function getPaddle() {
 }
 
 function getVelocity() {
+
     var velocity = [];
 
     for( var c = 2; c <= 7; c++) {
         velocity.push(game.input[1][c].velocity);
         velocity.push(game.input[8][c].velocity);
         velocity.push(game.input[c][1].velocity);
-        velocity.push(game.input[c][8].velocity);        
+        velocity.push(game.input[c][8].velocity);  
     }
-
     velocity.push(game.input[2][2].velocity);
     velocity.push(game.input[2][7].velocity);
     velocity.push(game.input[7][2].velocity);
     velocity.push(game.input[7][7].velocity);
 
-    //onsole.log(velocity.length);
     return velocity;
 }
 
 function getBall() {
+
     var ball = [];
+
     for(var c = 0; c < inputWidth; c++) {
         for(var r = 0; r < inputHeight; r++) {
             ball.push(game.input[c][r].ball);
         }
     }
     //console.log(ball.length);
+
     return ball;
 }
 
@@ -104,26 +106,59 @@ function getInputs() {
 
 function getPointfromInputIndex(inputnumber) {
 
-	var point = {};
+	var point = {}; 
 	if(inputnumber < 160 && inputnumber >= 0) {
-		point.x = 0;
-		point.y = 0; 
+		point.y = 25 + (inputnumber%8)*10;
+		point.x = 25 + (inputnumber-inputnumber%8)/8*10; 
 	}
 	else if(inputnumber >= 160 && inputnumber < 184) {
-		point.x = 0;
-		point.y = 20;
+		point.x = (inputnumber-160)*10+5;
+		point.y = 155;
 	}
 	else if(inputnumber >= 184 && inputnumber < 212) {
-		point.x = 0;
-		point.y = 40;
+		var temp = inputnumber-184;
+		var velocityXYLocations = 
+			[15, 25,
+			85, 25,
+			25, 15,
+			25, 85,
+			15, 35,
+			85, 35,
+			35, 15,
+			35, 85,
+			15, 45,
+			85, 45,
+			45, 15,
+			45, 85,
+			15, 55,
+			85, 55,
+			55, 15,
+			55, 85,
+			15, 65,
+			85, 65,
+			65, 15,
+			65, 85,
+			15, 75,
+			85, 75,
+			75, 15,
+			75, 85,
+			25, 25,
+			25, 75,
+			75, 25,
+			75, 75];
+		point.x = velocityXYLocations[temp*2];
+		point.y = velocityXYLocations[temp*2+1];
 	}
 	else if(inputnumber >= 212 && inputnumber < Inputs) {
-		point.x = 0;
-		point.y = 60;
+		var temp = inputnumber-212;
+		point.y = 5 + (temp%16)*10;
+		point.x = 5 + (temp-temp%16)/16*10; 
+		if(point.x>240) {alert("fuckup");}
 	}
 	else {
 		alert("Accessing input index for display which does not exist.");
 	}
+	point.firing = inputs[inputnumber];
 	return point;
 }
 
@@ -745,8 +780,6 @@ function addToSpecies(child) {
         var foundSpecies = false;
         for ( var s=0; s < pool.species.length; s++ ) {
                 var species = pool.species[s];
-                console.log("Inputs: "+Inputs);
-                console.log("First genome in species genes: "+species.genomes[0].genes);
                 if (!foundSpecies && sameSpecies(child, species.genomes[0])) { 
                         tableInsert(species.genomes, child);
                         foundSpecies = true;
@@ -887,7 +920,8 @@ function drawline(point1, point2) {
 		ctx.beginPath();
 		ctx.moveTo(point1.x,point1.y);
 		ctx.lineTo(point2.x,point2.y);
-		ctx.strokeStyle = "#00FF00";
+		if(point1.firing) {ctx.strokeStyle = "#00FF00";}
+		else {ctx.strokeStyle = "#FF0000";}
 		ctx.stroke();
 		ctx.closePath();
 }
@@ -954,41 +988,40 @@ function displayGenome(genome) {
 
 		var network = genome.network;
 
-		 drawNeuron(4,4,5); 
-		// drawNeuron(1,1,5);
-		//console.log("drawing hiddenNeurons");
+		//Test Neuron for draw neuron drawNeuron(4,4,5); 
 		//console.log(JSON.stringify(genome.genes,null,4));
 		var k = Inputs;
 		while(network.neurons[k] !== undefined) { 
-			if(network.neurons[k].incoming.enabled == true) {
+			//if(network.neurons[k].incoming.enabled == true) {
 					var hiddenNeuron
 					hiddenNeuron.number = k-Inputs;
 					hiddenNeuron.y = hiddenNeuron.number % inputWidth;
 					hiddenNeuron.x  = (hiddenNeuron.number - hiddenNeuron.y) / inputWidth;
 					hiddenNeuron.value = network.neurons[k].value;
 					drawNeuron(hiddenNeuron.x, hiddenNeuron.y,hiddenNeuron.value);
-					console.log("drew hiddenNeuron");
-			}
-			console.log("hiddenNeuron present but not enabled");
+					//console.log("drew hiddenNeuron");
+			//}
+			//console.log("hiddenNeuron present but not enabled");
 			k++;
+			//alert("Drew a hiddenNeuron"); //THIS LINE WILL CAUSES SLOW DOWN IF ALERTS ARE IGNORED BY BROWSER. REMOVE ONCE HIDDEN NEURONS ARE SEEN
 		}
 
 		for( var o = 0; o < Outputs; o++) {
 				//console.log("Trying to draw output neuron o: "+o);
 				//console.log("The output neuron is enabled: "+network.neurons[MaxNodes+o].value);
 				drawNeuron(23,15*o,network.neurons[MaxNodes+o].value); 
-				//console.log("output node is enabled");
-		}
 
-		for( var j = 0; j < genome.genes.length; j++) {
-			//console.log("Getting points of indexes "+genome.genes[j].into+" and "+genome.genes[j].out);
-			var point1 = getGeneDisplayLocation(genome.genes[j].into);
-			var point2 = getGeneDisplayLocation(genome.genes[j].out);
-			drawline(point1,point2);
-			//console.log("Drawing line: "+point1.x+" "+point1.y+" "+point2.x+" "+point2.y);
+				for( var j = 0; j < network.neurons[MaxNodes+o].incoming.length; j++) {
+						if(network.neurons[MaxNodes+o].incoming[j].enabled) {
+								var point1 = getGeneDisplayLocation(network.neurons[MaxNodes+o].incoming[j].into);
+								var point2 = getGeneDisplayLocation(network.neurons[MaxNodes+o].incoming[j].out);
+								//console.log("Drawing neuron with input: "+network.neurons[MaxNodes+o].incoming.into);
+								drawline(point1,point2);
+								//console.log("Called drawline");						
+						}
+				}
+				//console.log(JSON.stringify(network.neurons[MaxNodes],null,4));
 		}
-		
-		//console.log(JSON.stringify(network.neurons[MaxNodes],null,4));
 		return;
 }
 
