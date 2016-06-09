@@ -49,7 +49,7 @@ function drawPreformanceMonitor() {
 			ctx.fillStyle = "#FF0000";
 		}
 		else {
-			ctx.fillStyle = "#00FF00";
+			ctx.fillStyle = "#990000";
 		}
 		ctx.fill();
 		ctx.closePath();
@@ -57,7 +57,7 @@ function drawPreformanceMonitor() {
 		ctx.beginPath();
 		ctx.rect(c*pixelSize, canvas.height - (height1+1)*pixelSize, pixelSize, pixelSize);
 		if(height1 > 10) {
-			ctx.fillStyle = "#FF0000";
+			ctx.fillStyle = "#00FF00";
 		}
 		else {
 			ctx.fillStyle = "#009900";
@@ -66,9 +66,9 @@ function drawPreformanceMonitor() {
 		ctx.closePath();
 
 		ctx.beginPath();
-		ctx.rect(c*pixelSize, canvas.height - (height1+1)*pixelSize, pixelSize, pixelSize);
-		if(height1 > 10) {
-			ctx.fillStyle = "#FF0000";
+		ctx.rect(c*pixelSize, canvas.height - (height3+1)*pixelSize, pixelSize, pixelSize);
+		if(height3 > 10) {
+			ctx.fillStyle = "#0000FF";
 		}
 		else {
 			ctx.fillStyle = "#000099";
