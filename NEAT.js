@@ -219,7 +219,7 @@ function copyGenome(genome) {
 
         var genome2 = newGenome();
         for (g=0; g < genome.genes.length; g++) {
-        	tableInsert(genome2.genes, copyGene(genome.genes[g]));
+          genome2.genes[g] = copyGene(genome.genes[g]);
         }
         genome2.maxneuron = genome.maxneuron;
         genome2.mutationRates.connections = genome.mutationRates.connections;
@@ -245,7 +245,7 @@ function basicGenome() {
         var genome = newGenome();
         //TODO: determine effect
         var innovation = 0;
-        genome.maxneuron = Inputs;
+        genome.maxneuron = Inputs - 1;
         console.log("Mutating Genome");
         mutate(genome);
         console.log("Returning basicGenome");
@@ -300,24 +300,23 @@ function generateNetwork(genome) {
         }
        
        	//Sort the genome based on the order of the output of the genes. 
-        tableSort(genome.genes, function (a,b) {
-                return (a.out < b.out);
+        genome.genes.sort(function(a, b) {
+            return (a.out < b.out);
         });
 
         //Interate through the genome && build a neuron where required for each active genome.
-        for (var i=0; i < genome.genes.length; i++) {
-                var gene = genome.genes[i];
+        genome.genes.forEach(function(gene) {
                 if(gene.enabled) {
                         if (network.neurons[gene.out] == undefined) {
                                 network.neurons[gene.out] = newNeuron();
                         }
                         var neuron = network.neurons[gene.out];
-                        tableInsert(neuron.incoming, gene);
+                        neuron.incoming.push(gene);
                         if (network.neurons[gene.into] == undefined) {
                         		network.neurons[gene.into] = newNeuron();
                         }              	
                 }
-        } 
+        });
         genome.network = network;
         //console.log("Generated network is: "+JSON.stringify(genome.network,null,4));
 }
@@ -332,48 +331,29 @@ function evaluateNetwork(network, inputs) {
 		// //console.log("last output is:"+network.neurons[Inputs-1]);
 		// console.log(JSON.stringify(network.neurons[Inputs-1], null, 4));
 		// console.log(JSON.stringify(network.neurons[Inputs], null, 4));
-  //      // tableInsert(inputs, 0);
+      //  tableInsert(inputs, 0);
         if (inputs.length != Inputs) {
-        		console.log("Incorrect number of neural network inputs.");
+        		console.error("Incorrect number of neural network inputs.");
                 return {};
         }
         for (i=0; i < Inputs; i++) {
         		network.neurons[i].value = inputs[i];
         }
 
-        //Iffy translation	
-        var k = 0;
-        while(network.neurons[k] !== undefined) {
-        		var sum = 0;
-        		var neuron = network.neurons[k]; //Especially iffy translation
-
-        		for(var j = 0; j < neuron.incoming.length; j++) {
-						var incoming = neuron.incoming[j];
-						var other = network.neurons[incoming.into];
-						sum = sum + incoming.weight*other.value;
-				}
-				if(neuron.incoming.length > 0) {
-					neuron.value = sigmoid(sum);
-				}
-				k++;
-        }
-        var k = MaxNodes;
-        while(network.neurons[k] !== undefined) {
-        		if(k == MaxNodes) {
-        			//console.log(JSON.stringify(network.neurons[k],null,4));	
-        		}
-        		var sum = 0;
-        		var neuron = network.neurons[k]; //Especially iffy translation
-        		for(var j = 0; j < neuron.incoming.length; j++) {
-						var incoming = neuron.incoming[j];
-						var other = network.neurons[incoming.into];
-						sum = sum + incoming.weight*other.value;
-				}
-				if(neuron.incoming.length > 0) {
-					neuron.value = sigmoid(sum);
-				}
-				k++;
-        }
+        network.neurons.forEach(function(neuron) {
+          if(!neuron) {
+            return;
+          }
+          var sum = 0;
+          neuron.incoming.forEach(function(incoming) {
+            var other = network.neurons[incoming.into];
+            sum += incoming.weight * other.value;
+          });
+          if(neuron.incoming.length > 0) {
+            neuron.value = sigmoid(sum);
+          }
+        });
+        
         //console.log("Output neuron values are:"+network.neurons[MaxNodes].value+" and "+network.neurons[MaxNodes].value);
         var outputs = [];
         for (var o=0; o < Outputs; o++) {
@@ -385,7 +365,7 @@ function evaluateNetwork(network, inputs) {
                 		outputs[o] = true;
                 } 
                 else {
-                        outputs[o] = false;            	
+                    outputs[o] = false;            	
                 }
 
         } 
@@ -396,7 +376,7 @@ function evaluateNetwork(network, inputs) {
 function crossover(g1, g2) {
         // Make sure g1 is the higher fitness genome
         if (g2.fitness > g1.fitness) {
-                tempg = g1;
+                var tempg = g1;
                 g1 = g2;
                 g2 = tempg;
         }
@@ -404,25 +384,24 @@ function crossover(g1, g2) {
         var child = newGenome();
        
         var innovations2 = [];
-        for (var i=0; i < g2.genes.length; i++) {
-                var gene = g2.genes[i];
-                innovations2[gene.innovation] = gene;
-        }
+        g2.genes.forEach(function(gene) {
+            innovations2[gene.innovation] = gene;
+        });
        
-        for (var i=0; i < g1.genes.length; i++) {
-                var gene1 = g1.genes[i];
-                var gene2 = innovations2[gene1.innovation];
-                if (gene2 !== undefined && Math.random(2) < 0.5 && gene2.enabled) {
-                        tableInsert(child.genes, copyGene(gene2));
-                }
-                else {
-                        tableInsert(child.genes, copyGene(gene1));                	
-                }
-        }
+        g1.genes.forEach(function(gene1) {
+          var gene2 = innovations2[gene1.innovation];
+          if(gene2 !== undefined && Math.random() < 0.5 && gene2.enabled) {
+            child.genes.push(copyGene(gene2));
+          } else {
+            child.genes.push(copyGene(gene1));
+          }
+        });
 
         child.maxneuron = Math.max(g1.maxneuron,g2.maxneuron);       	
-       	//Iffy translation again
-       	child.mutationRates = g1.mutationRates;
+       	
+        Object.keys(g1.mutationRates).forEach(function(mutation) {
+          child.mutationRates[mutation] = g1.mutationRates[mutation];
+        });
        
         return child;
 }
@@ -440,71 +419,44 @@ function randomNeuron(genes, nonInput) {
         }
         console.log("randomNeuron: Initialized inputs and outputs to true");
 
+        genes.forEach(function(gene) {
+          if(!nonInput || gene.into >= Inputs) {
+            neurons[gene.into] = true;
+          }
+          if(!nonInput || gene.out >= Inputs) {
+            neurons[gene.out] = true;
+          }
+        });
+        
+        var trueNeurons = neurons.filter(function(e) {return e == true;});
 
-        for (var i=0; i < genes.length; i++) {
-                if (!nonInput || genes[i].into > Inputs) {
-                		neurons[genes[i].into] = true;
-                }
-                if (!nonInput || genes[i].out > Inputs) {
-                        neurons[genes[i].out] = true;
-                }
-        }
- 
-        var count = 0
-        var j = 0
-        while(neurons[j] !== undefined) {
-        		count++;
-        		j++;
-        }
+        var count = trueNeurons.length;
 
-        k = 0;
-        while(neurons[MaxNodes+k] !== undefined) {
-        		k++;
-        		count++;
-        }
-
-        var n = randomIntFromInterval(0,count-1);
-       	
-       	if ( n < j ) {
-       			console.log("Returning randomNeuron: returning an input or hidden node");
-       			return n;
-       	}
-
-       	else if (n - j < k ) {
-       			console.log("Returning randomNeuron: returning an output");
-       			return MaxNodes + n - j;
-       	}
-
-       	console.log("randomNeuron function count failure"); {
-       		return -1;
-       	}
+        return Object.keys(neurons)[randomIntFromInterval(0, count)];
 }
 
 function randomIntFromInterval(min, max) {
-    	return Math.floor(Math.random()*(max-min+1)+min);
+    	return Math.floor(Math.random()*(max-min)+min);
 }
 
 function containsLink(genes, link) {
-		for( var i = 0; i < genes.length; i++ ) {
-				var gene = genes[i];
-				if(gene.into == link.into && gene.out == link.out) {
-						return true;
-				}
-		}
-		return false;
+  genes.forEach(function(gene) {
+    if(gene.into == link.into && gene.out == link.out) {
+      return true;
+    }
+  });
+  return false;
 }
 
 function pointMutate(genome) {
 		var step = genome.mutationRates.step;
-		for( var i = 0; i < genome.genes.length; i++ ) {
-				var gene = genome.genes[i];
-				if(Math.random() < PerturbChance) {
-						gene.weight = gene.weight + Math.random() * step*2 - step;
-				}
-				else {
-					gene.weight = Math.random()*4-2;
-				}
-		}
+    genome.genes.forEach(function(gene) {
+      if(Math.random() < PerturbChance) {
+        gene.weight += Math.random() * step * 2 - step;
+      } else {
+        gene.weight = Math.random() * 4 - 2;
+      }
+    });
 }
         
 function linkMutate(genome, forceBias) {
@@ -514,12 +466,12 @@ function linkMutate(genome, forceBias) {
         var neuron2 = randomNeuron(genome.genes, true);
         
         var newLink = newGene();
-        if ( neuron1 <= Inputs && neuron2 <= Inputs) {
+        if ( neuron1 < Inputs && neuron2 < Inputs) {
                 //Both input nodes
                 console.log("Returning linkMutate: Both neurons are input nodes - Very likely");
                 return;
         }
-        if ( neuron2 <= Inputs ) {
+        if ( neuron2 < Inputs ) {
                 //Swap output and input
                 var temp = neuron1;
                 neuron1 = neuron2;
@@ -529,7 +481,7 @@ function linkMutate(genome, forceBias) {
         newLink.into = neuron1;
         newLink.out = neuron2;
         if ( forceBias ) {
-                newLink.into = Inputs;
+                newLink.into = Inputs-1;
         }
        
         if ( containsLink(genome.genes, newLink)) {
@@ -539,7 +491,7 @@ function linkMutate(genome, forceBias) {
         newLink.innovation = newInnovation();
         newLink.weight = Math.random()*4-2;
        
-        tableInsert(genome.genes, newLink);	
+        genome.genes.push(newLink);
         console.log("Returning linkMutate: added new link");
 }
 
@@ -550,7 +502,7 @@ function nodeMutate(genome) {
  
         genome.maxneuron = genome.maxneuron + 1;
  
-        var gene = genome.genes[randomIntFromInterval(0,genome.genes.length-1)];
+        var gene = genome.genes[randomIntFromInterval(0,genome.genes.length)];
         if ( !gene.enabled ) {
                 return;
         }
@@ -561,140 +513,132 @@ function nodeMutate(genome) {
         gene1.weight = 1.0;
         gene1.innovation = newInnovation();
         gene1.enabled = true;
-        tableInsert(genome.genes, gene1);
+        genome.genes.push(gene1);
        
         var gene2 = copyGene(gene);
         gene2.into = genome.maxneuron;
         gene2.innovation = newInnovation();
         gene2.enabled = true;
-        tableInsert(genome.genes, gene2);
+        genome.genes.push(gene2);
 }
 
 function enableDisableMutate(genome, enable) {
-        var candidates = [];
-        for ( var i = 0; i < genome.genes; i++) {
-                if (gene.enabled == !enable) {
-                        tableInsert(candidates, gene);
-                }        	
-        }
+        var candidates = genome.genes.filter(function(gene) {
+          return gene.enabled == !enable;
+        });
+        
         if (candidates.length == 0) {
                 return;
         }       
-        var gene = candidates[randomIntFromInterval(0,candidates.length-1)];
+        var gene = candidates[randomIntFromInterval(0,candidates.length)];
         gene.enabled = !gene.enabled;
 }
 
 function mutate(genome) {
 		//return;
-
-		var obj = genome.mutationRates;
-		Object.getOwnPropertyNames(obj).forEach(function(val, idx, array) {
-    			if(randomIntFromInterval(1,2)==1) {
-    					obj[val] = 0.95*obj[val];
-    			}
-    			else {
-    					obj[val] = 1.05263*obj[val];
-    			}
-    			console.log(val+": "+obj[val])
-		});
+    Object.keys(genome.mutationRates).forEach(function(mutation) {
+      if(Math.random() <= 0.5) {
+        genome.mutationRates[mutation] = 0.95*genome.mutationRates[mutation];
+      } else {
+        genome.mutationRates[mutation] = 1.05263*genome.mutationRates[mutation];
+      }
+    });
 		
-        if (Math.random() < genome.mutationRates.connections) {
-                pointMutate(genome);
-        }
-        
-       	//Seems broken. Can not ascertain the original function
-        var p = genome.mutationRates.link;
-        while (p > 0) {
-                if (Math.random() < p) {
-                        linkMutate(genome, false);
-                }
-                p--;       	
-        }
-        return;
-        p = genome.mutationRates.bias;
-        while (p > 0) {
-                if (Math.random() < p) {
-                        linkMutate(genome, true);
-                }
-                p--;       	
-        }
-       
-        p = genome.mutationRates.node;
-        while (p > 0) {
-                if (Math.random() < p) {
-                        nodeMutate(genome, true);
-                }
-                p--;       	
-        }
+    if (Math.random() < genome.mutationRates.connections) {
+            pointMutate(genome);
+    }
+    
+   	//Seems broken. Can not ascertain the original function
+    var p = genome.mutationRates.link;
+    while (p > 0) {
+            if (Math.random() < p) {
+                    linkMutate(genome, false);
+            }
+            p--;       	
+    }
 
-        p = genome.mutationRates.enable;
-        while (p > 0) {
-                if (Math.random() < p) {
-                        enableDisableMutate(genome, true);
-                }
-                p--;       	
-        }
- 
-        p = genome.mutationRates.disable;
-        while (p > 0) {
-                if (Math.random() < p) {
-                        enableDisableMutate(genome, false);
-                }
-                p--;       	
-        }
-        console.log("Mutated a genome");
+    p = genome.mutationRates.bias;
+    while (p > 0) {
+            if (Math.random() < p) {
+                    linkMutate(genome, true);
+            }
+            p--;       	
+    }
+   
+    p = genome.mutationRates.node;
+    while (p > 0) {
+            if (Math.random() < p) {
+                    nodeMutate(genome);
+            }
+            p--;       	
+    }
+
+    p = genome.mutationRates.enable;
+    while (p > 0) {
+            if (Math.random() < p) {
+                    enableDisableMutate(genome, true);
+            }
+            p--;       	
+    }
+
+    p = genome.mutationRates.disable;
+    while (p > 0) {
+            if (Math.random() < p) {
+                    enableDisableMutate(genome, false);
+            }
+            p--;       	
+    }
+    console.log("Mutated a genome");
 }
        
 function disjoint(genes1, genes2) {
 
         var i1 = [];
-        for (var i = 0; i < genes1.length; i++ ) {
-                var gene = genes1[i];
-                i1[gene.innovation] = true;
-        }
+        genes1.forEach(function(gene) {
+          i1[gene.innovation] = true;
+        });
+
         var i2 = [];
-        for (var i = 0; i < genes2.length; i++ ) {
-                var gene = genes2[i];
-                i2[gene.innovation] = true;
-        }
+        genes2.forEach(function(gene) {
+          i2[gene.innovation] = true;
+        });
+        
         console.log("Added all innovations to i1 and i2");
         var disjointGenes = 0
-        for ( var i = 0; i < genes1.length; i++ ) {
-                var gene = genes1[i];
-                if ( !i2[gene.innovation]) {
-                		disjointGenes++;
-                }
-        }
-        for ( var i = 0; i < genes2.length; i++ ) {
-                var gene = genes2[i];
-                if ( !i1[gene.innovation]) {
-                		disjointGenes++;
-                }
-        }
+        genes1.forEach(function(gene) {
+          if(!i2[gene.innovation]) {
+            disjointGenes++;
+          }
+        });
+        
+        genes2.forEach(function(gene) {
+          if(!i1[gene.innovation]) {
+            disjointGenes++;
+          }
+        });
+        
         var n = Math.max(genes1.length, genes2.length);
-        return disjointGenes / n;
+        return disjointGenes*1.0 / n;
         console.log("Returning disjoint");
 }
 
 function weights(genes1, genes2) {
         var i2 = [];
-        for (var i = 0; i < length.genes2; i++) {
-        	var gene = genes2[i];
-        	i2[gene.innovation] = gene;
-        }
+        genes2.forEach(function(gene) {
+          i2[gene.innovation] = gene;
+        });
  
         var sum = 0;
         var coincident = 0;
-        for (var i = 0; i < length.genes1; i++) {
-                var gene = genes1[i];
-                if (i2[gene.innovation] != undefined) {
-                        var gene2 = i2[gene.innovation];
-                        sum = sum + Math.abs(gene.weight - gene2.weight);
-                        coincident = coincident + 1;
-	            }
-        }
+        genes1.forEach(function(gene) {
+          if(i2[gene.innovation] != undefined) {
+            var gene2 = i2[gene.innovation];
+            sum += Math.abs(gene.weight - gene2.weight);
+            coincident++;
+          }
+        });
        
-        return sum / coincident;
+        return sum*1.0 / coincident;
 }
 
 function sameSpecies(genome1, genome2) {
@@ -705,77 +649,66 @@ function sameSpecies(genome1, genome2) {
  
 function rankGlobally() {
         var globalList = [];
-        for ( var s = 0; s < pool.species.length; s++ ) { 
-                var species = pool.species[s];
-                for ( var g = 0; g < species.genomes.length; g++ ) {
-                        tableInsert(globalList, species.genomes[g]);
-                }
-        }
+        pool.species.forEach(function(species) {
+          species.genomes.forEach(function(genome) {
+            globalList.push(genome);
+          });
+        });
+
         console.log("Added all genomes from all species to a globall list ");
-        tableSort(globalList, function (a,b) {
-        	return (a.fitness < b.fitness);
+        globalList.sort(function(a, b) {
+          return a.fitness < b.fitness;
         });
         console.log("sorted the list of all genomes according to fitness");
         //console.log("Rank 0 Genome is:"+JSON.stringify(globalList[0]));
 
-        for ( var g=0; g < globalList.length; g++) {
-                globalList[g].globalRank = g;
-        }
+        globalList.forEach(function(genome, index) {
+          genome.globalRank = index + 1;
+        });
 }
 
 function calculateAverageFitness(species) {
         var total = 0;
+        
+        species.genomes.forEach(function(genome) {
+          total += genome.globalRank;
+        });
 
-        for ( var g=0; g < species.genomes.length; g++) {
-                var genome = species.genomes[g];
-                total = total + genome.globalRank;
-        }
-
-        species.averageFitness = total / species.genomes.length;
+        species.averageFitness = total*1.0 / species.genomes.length;
 }
 
 function totalAverageFitness() {
         var total = 0;
-        for ( var s = 0; s < pool.species.length; s++ ) {
-                var species = pool.species[s];
-                total = total + species.averageFitness;
-        }
+        pool.species.forEach(function(species) {
+          total += species.averageFitness;
+        });
  
         return total;
 }
 
 function cullSpecies(cutToOne) {
-        for (var s = 0; s < pool.species.length; s++ ) {
-                var species = pool.species[s];
-               
-                tableSort(species.genomes, function (a,b) {
-                        return (a.fitness > b.fitness); 
-                });
-               
-                var remaining = Math.ceil(species.genomes.length/2);
-                if (cutToOne) {
-                		remaining = 1;
-                }
-
-                while (species.genomes.length > remaining) {
-                        tableRemove(species.genomes);
-                }
-        }
-}
-
-function tableRemove(arr) {
-		arr.pop();
+  pool.species.forEach(function(species) {
+    species.genomes.sort(function(a,b) {
+      return a.fitness > b.fitness;
+    });
+    
+    var remaining = Math.ceil(species.genomes.length*1.0/2);
+    if(cutToOne) {
+      remaining = 1;
+    }
+    species.genomes = species.genomes.slice(0, remaining);
+  });
 }
 
 function breedChild(species) {
         var child = {};
         if (Math.random() < CrossoverChance) {
-                var g1 = species.genomes[randomIntFromInterval(0, species.genomes.length-1)];
-                var g2 = species.genomes[randomIntFromInterval(0, species.genomes.length-1)];
+                var g1 = species.genomes[randomIntFromInterval(0, species.genomes.length)];
+                var g2 = species.genomes[randomIntFromInterval(0, species.genomes.length)];
                 child = crossover(g1, g2);
         }
         else {
-                g = species.genomes[randomIntFromInterval(0, species.genomes.length-1)];
+                g = species.genomes[randomIntFromInterval(0, species.genomes.length)];
                 child = copyGenome(g);
         }
        
@@ -785,27 +718,24 @@ function breedChild(species) {
 
 function removeStaleSpecies() {
         var survived = [];
- 
-        for (var s = 0; s < pool.species.length; s++ ) {
-                var species = pool.species[s];
-               
-                tableSort(species.genomes, function (a,b) {
-                        return (a.fitness > b.fitness);
-                });
-               
-                if (species.genomes[0].fitness > species.topFitness) { 
-                        species.topFitness = species.genomes[0].fitness;
-                        species.staleness = 0;
-                }
-                else {
-                        species.staleness = species.staleness + 1;
-                }
-
-                if (species.staleness < StaleSpecies || species.topFitness >= pool.maxFitness) {
-                        tableInsert(survived, species);
-                }
-        }
- 
+        pool.species.forEach(function(species) {
+          
+          species.genomes.sort(function(a,b) {
+            return a.fitness > b.fitness;
+          });
+          
+          if (species.genomes[0].fitness > species.topFitness) {
+            species.topFitness = species.genomes[0].fitness;
+            species.staleness = 0;
+          } else {
+            species.staleness++;
+          }
+          
+          if(species.staleness < StaleSpecies || species.topFitness >= pool.maxFitness) {
+            survived.push(species);
+          }
+        });
+        
         pool.species = survived;
 }
 
@@ -813,31 +743,29 @@ function removeWeakSpecies() {
         var survived = [];
  
         var sum = totalAverageFitness();
-        for (var s = 0; s < pool.species.length; s++ ) {
-                var species = pool.species[s];
-                breed = Math.floor(species.averageFitness / sum * Population);
-                if (breed >= 1) {
-                        tableInsert(survived, species);
-                }
-        }
- 
+        pool.species.forEach(function(species) {
+          var breed = Math.floor(species.averageFitness*1.0 / sum * Population);
+          if(breed >= 1) {
+            survived.push(species);
+          }
+        });
+        
         pool.species = survived;
 }
 
 function addToSpecies(child) {
         var foundSpecies = false;
-        for ( var s=0; s < pool.species.length; s++ ) {
-                var species = pool.species[s];
+        pool.species.forEach(function(species) {
                 if (!foundSpecies && sameSpecies(child, species.genomes[0])) { 
-                        tableInsert(species.genomes, child);
+                        species.genomes.push(child);
                         foundSpecies = true;
                 }
-        }
+        });
        
         if (!foundSpecies) {
                 var childSpecies = newSpecies();
-                tableInsert(childSpecies.genomes, child);
-                tableInsert(pool.species, childSpecies);
+                childSpecies.genomes.push(child);
+                pool.species.push(childSpecies);
                 console.log("A new species has been created");
         }
         console.log("Returning addToSpecies");
@@ -853,35 +781,32 @@ function newGeneration() {
         rankGlobally();
         console.log("Ranked species globally again");
 
-        for ( var s = 0; s < pool.species.length; s++ ) {
-                var species = pool.species[s];
-                calculateAverageFitness(species);
-        }
+        pool.species.forEach(function(species) {
+          calculateAverageFitness(species);
+        });
         removeWeakSpecies();
         console.log("Removed all the weak species");
         var sum = totalAverageFitness();
         var children = [];
         console.log(pool.species.length+" species remaining");
-        for (var s = 0; s < pool.species.length; s++ ) {
-                var species = pool.species[s];
+        pool.species.forEach(function(species, index) {
 
-                breed = Math.floor(species.averageFitness / sum * Population) - 1;
-                console.log("Breeding "+breed+" children from species "+s);
+                var breed = Math.floor(species.averageFitness*1.0 / sum * Population) - 1;
+                console.log("Breeding "+breed+" children from species "+index);
                 console.log("If error, should read undefined: "+species);
                 for (var i=0; i < breed; i++) {
-                        tableInsert(children, breedChild(species));
+                        children.push(breedChild(species));
                 }
-        }
+        });
         cullSpecies(true); // Cull all but the top member of each species
         console.log("culled all but the top member of each species");
         while (children.length + pool.species.length < Population) {
-                var species = pool.species[randomIntFromInterval(0, pool.species.length-1)];
-                tableInsert(children, breedChild(species));
+                var species = pool.species[randomIntFromInterval(0, pool.species.length)];
+                children.push(breedChild(species));
         }
-        for (var c=0; c < children.length; c++) {
-                var child = children[c];
+        children.forEach(function(child) {
                 addToSpecies(child);
-        }
+        });
        
         pool.generation++;
        
@@ -893,7 +818,7 @@ function initializePool() {
         console.log("initializePool");
         pool = newPool();
         for (var i=0; i < Population; i++) {
-                basic = basicGenome();
+                var basic = basicGenome();
                 console.log(JSON.stringify(basic,null,4));
                 addToSpecies(basic);
         }
@@ -937,17 +862,16 @@ function evaluateCurrent() {
         game.output = tempOutputs;
 }
 
-
 function nextGenome() {
-        pool.currentGenome = pool.currentGenome + 1;
+        pool.currentGenome++;
         //console.log("Executing nextGenome");
         //console.log("the length of the current species is "+pool.species[pool.currentSpecies].genomes.length);
         //console.log("the new current genome in the species is "+pool.currentGenome);
-        if ( pool.currentGenome > pool.species[pool.currentSpecies].genomes.length-1 ) {
+        if ( pool.currentGenome >= pool.species[pool.currentSpecies].genomes.length ) {
         		//console.log("The new genome is outside of the length of the current species, so move to the next species");
                 pool.currentGenome = 0;
-                pool.currentSpecies = pool.currentSpecies+1;
-                if ( pool.currentSpecies > pool.species.length-1 ) {
+                pool.currentSpecies++;
+                if ( pool.currentSpecies >= pool.species.length ) {
                 		console.log("creating a new generation");
                         newGeneration();
                         pool.currentSpecies = 0;
@@ -1018,7 +942,7 @@ function getPointformOutputIndex(outputnumber) {
 }
 
 function getGeneDisplayLocation(index) {
-	var point = {};
+	var point = {x:0, y:0};
 	if(index >= 0 && index < Inputs) {
 		point = getPointfromInputIndex(index);
 	}
@@ -1041,7 +965,7 @@ function displayGenome(genome) {
 		var k = Inputs;
 		while(network.neurons[k] !== undefined) { 
 			//if(network.neurons[k].incoming.enabled == true) {
-					var hiddenNeuron
+					var hiddenNeuron = {};
 					hiddenNeuron.number = k-Inputs;
 					hiddenNeuron.y = hiddenNeuron.number % inputWidth;
 					hiddenNeuron.x  = (hiddenNeuron.number - hiddenNeuron.y) / inputWidth;
