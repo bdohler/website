@@ -67,11 +67,11 @@ function loop() {
 		mp.draw(game1, canvas3, onInit);
 		if(!game1.flags.humanPlayer) {
 			if(onInit) {
-				clearInterval(intervalID);
+				clearTimeout(intervalID);
 			}
 			ai.execute(game1, canvas2, onInit);
 			if(onInit) {
-				intervalID = setInterval(loop, loopRate);
+				intervalID = setTimeout(timeoutLoop, loopRate);
 			}
 		}
 		
@@ -80,8 +80,17 @@ function loop() {
 
 }
 
-var intervalID = setInterval(loop, loopRate);
+var timeoutLoop = function() {
+	var start = (new Date()).getTime();
+	loop();
+	var timeLeft = loopRate - ((new Date()).getTime() - start);
+	if(timeLeft < 0) {
+		timeLeft = 0;
+	}
+	intervalID = setTimeout(timeoutLoop, timeLeft);
+}
 
+var intervalID = setTimeout(timeoutLoop, loopRate);
 
 // wait for load file or start new   
 // loop                                					  		   CHECK
