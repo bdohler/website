@@ -12,7 +12,7 @@ const littlePixelSize = 10;
 const inputWidth = 480/bigPixelSize;
 const inputHeight = 320/bigPixelSize;
 
-const Population = 20;
+const Population = 300;
 const DeltaDisjoint = 2.0;
 const DeltaWeights = 0.4;
 const DeltaThreshold = 1.0;
@@ -104,9 +104,9 @@ function getInputs() {
     return inputs;
 }
 
-function getPointfromInputIndex(inputnumber) {
+function getPointFromInputIndex(inputnumber) {
 
-	var point = {}; 
+	var point = {x:0, y:0};
 	if(inputnumber < 160 && inputnumber >= 0) {
 		point.y = 25 + (inputnumber%8)*10;
 		point.x = 25 + (inputnumber-inputnumber%8)/8*10; 
@@ -926,7 +926,7 @@ function drawNeuron(x,y,value) {
 		
 }
 
-function getPointformOutputIndex(outputnumber) {
+function getPointFromOutputIndex(outputnumber) {
 	var point = {};
 	if(outputnumber == 0) {
 		point.y = littlePixelSize/2;
@@ -941,17 +941,24 @@ function getPointformOutputIndex(outputnumber) {
 	return point;
 }
 
+function getPointFromHiddenNode(index) {
+	var point = {x:0, y:0};
+	index -= Inputs;
+	point.x = 245 + (index-index%16)/16*10; 
+	point.y = 5 + (index%16)*10;
+	return point;
+}
+
 function getGeneDisplayLocation(index) {
 	var point = {x:0, y:0};
 	if(index >= 0 && index < Inputs) {
-		point = getPointfromInputIndex(index);
+		point = getPointFromInputIndex(index);
 	}
 	else if(index >= MaxNodes && index < MaxNodes + Outputs) {
-		point = getPointformOutputIndex(index-MaxNodes);
+		point = getPointFromOutputIndex(index-MaxNodes);
 	}
-	//else if TODO include hidden neurons 
 	else
-		console.log("Accessing incorrect gene indexing, including possibly a hidden node index.");
+		point = getPointFromHiddenNode(index);
 	return point;
 }
 
@@ -964,15 +971,24 @@ function displayGenome(genome) {
 		//console.log(JSON.stringify(genome.genes,null,4));
 		var k = Inputs;
 		while(network.neurons[k] !== undefined) { 
-			//if(network.neurons[k].incoming.enabled == true) {
-					var hiddenNeuron = {};
-					hiddenNeuron.number = k-Inputs;
-					hiddenNeuron.y = hiddenNeuron.number % inputWidth;
-					hiddenNeuron.x  = (hiddenNeuron.number - hiddenNeuron.y) / inputWidth;
-					hiddenNeuron.value = network.neurons[k].value;
-					drawNeuron(hiddenNeuron.x, hiddenNeuron.y,hiddenNeuron.value);
-					//console.log("drew hiddenNeuron");
-			//}
+
+				var hiddenNeuron = {};
+				hiddenNeuron.number = k-Inputs;
+				hiddenNeuron.y = hiddenNeuron.number % inputWidth;
+				hiddenNeuron.x  = (hiddenNeuron.number - hiddenNeuron.y) / inputWidth;
+				hiddenNeuron.value = network.neurons[k].value;
+				drawNeuron(hiddenNeuron.x, hiddenNeuron.y,hiddenNeuron.value);
+				//console.log("drew hiddenNeuron");
+				for( var j = 0; j < network.neurons[k].incoming.length; j++) {
+						if(network.neurons[k].incoming[j].enabled) {
+								var point1 = getGeneDisplayLocation(network.neurons[k].incoming[j].into);
+								var point2 = getGeneDisplayLocation(network.neurons[k].incoming[j].out);
+								//console.log("Drawing neuron with input: "+network.neurons[MaxNodes+o].incoming.into);
+								drawline(point1,point2);
+								//console.log("Called drawline");						
+						}	
+				}
+
 			//console.log("hiddenNeuron present but not enabled");
 			k++;
 			//alert("Drew a hiddenNeuron"); //THIS LINE WILL CAUSES SLOW DOWN IF ALERTS ARE IGNORED BY BROWSER. REMOVE ONCE HIDDEN NEURONS ARE SEEN
