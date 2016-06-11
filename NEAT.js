@@ -153,10 +153,10 @@ function getPointFromInputIndex(inputnumber) {
 		var temp = inputnumber-212;
 		point.y = 5 + (temp%16)*10;
 		point.x = 5 + (temp-temp%16)/16*10; 
-		if(point.x>240) {alert("fuckup");}
+		if(point.x>240) {console.error("fuckup");}
 	}
 	else {
-		alert("Accessing input index for display which does not exist.");
+		console.error("Accessing input index for display which does not exist.");
 	}
 	point.firing = inputs[inputnumber];
 	return point;
@@ -937,7 +937,7 @@ function getPointFromOutputIndex(outputnumber) {
 		point.x = 480 - littlePixelSize/2;
 	}
 	else
-		alert("Acessing illegal output array index");
+		("Acessing illegal output array index");
 	return point;
 }
 
