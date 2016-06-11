@@ -1,5 +1,5 @@
 
-var NEAT = (function (game, canvas, onInit) {
+var NEAT = (function (game, canvas) {
 
 //TODO: Linearize inputs
 var Inputs = 24*16+20*8+24+4+4*6; 
@@ -35,16 +35,10 @@ const MaxNodes = 50000;
 function getBricks() {
     var bricks = [];
     for(c=0; c<game.columns; c++) {
-        for(r=0; r<game.rows; r++) {
-            
+        for(r=0; r<game.rows; r++) {            
             bricks.push(game.input[2*c+2][r+2].brick);
             bricks.push(game.input[2*c+3][r+2].brick);
         } 
-        if(onInit) {
-        //console.log((2*c+2)+" "+(r+2));
-        //console.log((2*c+3)+" "+(r+2));           
-        }
-
     } 
     //console.log(bricks.length);
     return bricks;
@@ -182,6 +176,9 @@ function newPool() {
         pool.currentGenome = 0;
         //pool.currentFrame = 0;
         pool.maxFitness = 0;
+        pool.maxFitnessGeneration = 0;
+        pool.maxFitnessSpecies = 0;
+        pool.maxFitnessGenome = 0;
         return pool;
 }
 
@@ -962,11 +959,25 @@ function getGeneDisplayLocation(index) {
 	return point;
 }
 
+function displayInfoOnGenome() {
+	ctx.font = "12px Arial";
+	ctx.fillStyle = "#000000";
+	//console.log(pool.generation+" "+pool.currentSpecies+" "+pool.currentGenome);
+	ctx.fillText("Generation: "+pool.generation.toFixed(0), 260, 110);
+	ctx.fillText("Species: "+pool.currentSpecies.toFixed(0), 260, 130);
+	ctx.fillText("Genome: "+pool.currentGenome, 260, 150);
+	ctx.fillText("Max Fitness: "+pool.maxFitness.toFixed(1)+" by G"+pool.maxFitnessGeneration+"S"+pool.maxFitnessSpecies+"G"+pool.maxFitnessGenome, 260, 90);		
+}
+
+function displayInfo() {
+	displayInfoOnGenome();		
+}
+
 function displayGenome(genome) {
-		//TODO: Display Genome
+
+		displayInfo();
 
 		var network = genome.network;
-
 		//Test Neuron for draw neuron drawNeuron(4,4,5); 
 		//console.log(JSON.stringify(genome.genes,null,4));
 		var k = Inputs;
@@ -1010,6 +1021,7 @@ function displayGenome(genome) {
 				}
 				//console.log(JSON.stringify(network.neurons[MaxNodes],null,4));
 		}
+
 		return;
 }
 
@@ -1036,7 +1048,7 @@ function loadPool() {
 
 
 return {
-    execute: function (game, canvas, onInit) {
+    execute: function (game, canvas) {
 
         var d = new Date();
 
@@ -1044,12 +1056,7 @@ return {
                 initializePool();
         }
 
-        //console.log(pool);
         var species = pool.species[pool.currentSpecies];
-        // if(onInit) {
-        // 	console.log("indicator");
-        // 	console.log(JSON.stringify(species, null, 4));
-        // }
 
         //console.log("currentGenome: "+pool.currentGenome);
         var genome = species.genomes[pool.currentGenome];
@@ -1061,7 +1068,7 @@ return {
       
         if(game.flags.gameLostByAI) {
 
-                var fitness = game.fitness;
+                var fitness = game.lastAIfitness;
                 game.fitness = 0;
                 if(fitness === 0) {
                         fitness = -1;
@@ -1069,6 +1076,9 @@ return {
                 genome.fitness = fitness;
                 if(fitness > pool.maxFitness) {
                         pool.maxFitness = fitness;
+                        pool.maxFitnessGeneration = pool.generation;
+        				pool.maxFitnessSpecies = pool.currentSpecies;
+        				pool.maxFitnessGenome = pool.currentGenome;
                 }
                 pool.currentSpecies = 0;
                 pool.currentGenome = 0;

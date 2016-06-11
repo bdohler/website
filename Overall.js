@@ -21,7 +21,8 @@ var game1 = {
 	pushLeft : false,
 	pushRight : false,
 	functionTimes : [],
-	flags : false
+	flags : false,
+	lastAIfitness : 0
 };
 
 game1.flags = {
@@ -51,25 +52,29 @@ function keyDownHandler(e) {
 
 
 var onInit = true;
-var loopRate = 20;
+var loopRate = 10;
 var bb = brickBreaker(game1, canvas1, onInit);
 var dac = displayAICanvas(game1, canvas2, onInit);
 var mp = monitorPreformance(game1, canvas3, onInit);
-var ai = NEAT(game1, canvas2, onInit);
+var ai = NEAT(game1, canvas2);
 
 function loop() {
 
 	//console.log("Executing Loop in Overall.js");
 
 	if(!paused) {
-		bb.draw(game1, canvas1, onInit);
+
+		if(onInit) {
+			bb.restartGame();
+		}
+		bb.draw(game1, canvas1);
 		dac.draw(game1, canvas2, onInit);
-		mp.draw(game1, canvas3, onInit);
+		mp.draw(game1, canvas3, onInit);	
 		if(!game1.flags.humanPlayer) {
 			if(onInit) {
 				clearTimeout(intervalID);
 			}
-			ai.execute(game1, canvas2, onInit);
+			ai.execute(game1, canvas2);
 			if(onInit) {
 				intervalID = setTimeout(timeoutLoop, loopRate);
 			}

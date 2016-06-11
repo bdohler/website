@@ -1,4 +1,4 @@
-var brickBreaker = (function (game, canvas, onInit) {
+var brickBreaker = (function (game, canvas) {
 
 console.log("Inititiating brickBreaker Function");
 
@@ -38,31 +38,6 @@ const brickOffsetTop = 40;
 const brickOffsetLeft = 40;
 const ddx = 1;
 const dxLimit = 7; 
-
-function restartGame() {
-
-	//console.log("Executing Restart in BrickBreaker.js");	
-	for(c=0; c<brickColumnCount; c++) {
-		game.bricks[c] = []; 
-		for(r=0; r<brickRowCount; r++) {
-			game.bricks[c][r] = { x: 0, y: 0, status: true };
-		}
-	}
-	score = 0;
-	lives = 1;
-	collision = false;
-	rightPressed = false;
-	leftPressed = false;
-
-	game.x = initialX;
-	game.y = initialY;
-	game.dx = initialDx;
-	game.dy = initialDy;
-	dx = 0;
-	game.paddleX = canvas.width/2-paddleRadius;
-	game.gameTime = 0;
-
-}
 
 //console.log("Constructed bricks array");
 
@@ -228,10 +203,11 @@ function handleBall() {
 			}
 			else if(!game.flags.humanPlayer) {
 				game.flags.gameLostByAI = true;
+				game.lastAIfitness = game.fitness;
 			}
 			lives = 1;
 		}
-		restartGame();
+		returnedFunctions.restartGame();
 	}
 					
 	game.x += game.dx;
@@ -284,13 +260,36 @@ function handlePaddle() {
 	}
 }
 
+var returnedFunctions = {};
 
-return {
-	draw: function (game, canvas, onInit) {
 
-		if(onInit) {
-			restartGame();
-		}	
+returnedFunctions.restartGame = function () {
+
+	//console.log("Executing Restart in BrickBreaker.js");	
+	for(c=0; c<brickColumnCount; c++) {
+		game.bricks[c] = []; 
+		for(r=0; r<brickRowCount; r++) {
+			game.bricks[c][r] = { x: 0, y: 0, status: true };
+		}
+	}
+	score = 0;
+	lives = 1;
+	collision = false;
+	rightPressed = false;
+	leftPressed = false;
+
+	game.x = initialX;
+	game.y = initialY;
+	game.dx = initialDx;
+	game.dy = initialDy;
+	dx = 0;
+	game.paddleX = canvas.width/2-paddleRadius;
+	game.gameTime = 0;
+
+}
+
+returnedFunctions.draw = function (game, canvas) {
+
 		//console.log("Executing Draw in BrickBreaker.js");		
 		var d = new Date();
 
@@ -314,7 +313,9 @@ return {
 		var n = new Date();
 		game.functionTimes[0] = n - d;
 	}
-};
+
+
+return returnedFunctions;
 
 
 });
