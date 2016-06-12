@@ -12,7 +12,7 @@ const littlePixelSize = 10;
 const inputWidth = 480/bigPixelSize;
 const inputHeight = 320/bigPixelSize;
 
-const Population = 300;
+const Population = 10;
 const DeltaDisjoint = 2.0;
 const DeltaWeights = 0.4;
 const DeltaThreshold = 1.0;
@@ -1026,29 +1026,75 @@ function displayGenome(genome) {
 }
 
 function writeFile() {
-		//TODO: Write Progress To File
-		return;
-}
-
-function savePool() {
-		//TODO: Write Progress To File
+		var data = {};
+		data.pool = pool;
+		var url = 'data:text/json;charset=utf8,' + JSON.stringify(data);
+		window.open(url, '_blank');
+		window.focus();
 		return;
 }
 
 function loadFile() {
-		//TODO: Write Progress To File
+
+		console.log("Executing Load File");
+
+		if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
+			alert('The File APIs are not fully supported in this browser.');
+		}
+
+
+	    var files = document.getElementById('files').files;
+	    if (!files.length) {
+	    	alert('Please select a file!');
+	    	return;
+	    }
+
+	    var file = files[0];
+	    var start = 0;
+	    var stop = file.size - 1;
+	    var reader = new FileReader();
+	    var saveFileString;
+	    var saveFileObject;
+
+	    // If we use onloadend, we need to check the readyState.
+	    reader.onloadend = function(evt) {
+	      if (evt.target.readyState == FileReader.DONE) { // DONE == 2
+	        document.getElementById('file_content').textContent = evt.target.result;
+	        saveFileString = evt.target.result;
+	      }
+	    };
+
+	    var blob = file.slice(start, stop + 1);
+	    reader.readAsBinaryString(blob);
+		document.getElementById('status').textContent = 'Read Save File Complete';
+		saveFileObject = JSON.parse(saveFileString);
+
+		return saveFileObject;
+}
+
+var returnedFunctions = {};
+
+returnedFunctions.savePool = function() {
+		var fileName = document.getElementById('fileName');
+		console.log("Saving pool as under filename: "+fileName);
+		if(fileName == undefined) {
+			return;
+		}
+		writeFile(fileName);
 		return;
 }
 
-function loadPool() {
-		//TODO: Write Progress To File
+returnedFunctions.loadPool = function() {
+		console.log("Executing loadPool");	
+		var saveFileContents = loadFile();
+		if(saveFileContents == undefined) {
+			return;
+		}
+		pool = saveFileContents.pool;
 		return;
 }
 
-
-
-return {
-    execute: function (game, canvas) {
+returnedFunctions.execute = function(game, canvas) {
 
         var d = new Date();
 
@@ -1057,15 +1103,13 @@ return {
         }
 
         var species = pool.species[pool.currentSpecies];
-
-        //console.log("currentGenome: "+pool.currentGenome);
         var genome = species.genomes[pool.currentGenome];
+
         if(game.gameTime > 0.03) {
         	displayGenome(genome);
         	evaluateCurrent();
         }
         
-      
         if(game.flags.gameLostByAI) {
 
                 var fitness = game.lastAIfitness;
@@ -1089,13 +1133,11 @@ return {
                 initializeRun();
         }
 
- 		
-
         var n = new Date();
         game.functionTimes[2] = n - d;
-    }
-};
+}
 
+return returnedFunctions;
 
 });
 

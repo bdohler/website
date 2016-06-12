@@ -34,8 +34,10 @@ function readBlob() {
 
 //On pressing export, runs concatenateSaveFile and generates a download for the user to select
 function exportToCSV() {
-    var myCsv = buildSaveFile;
-    window.open('data:text/csv;charset=utf-8,' + escape(myCsv));
+    var data = pool;
+    var url = 'data:text/json;charset=utf8,' + encodeURIComponent(data);
+    window.open(url, '_blank');
+    window.focus();
 }
 
 //Builds and returns a string object
@@ -65,3 +67,5 @@ function parseSaveFile() {
 
 	return;
 }
+
+

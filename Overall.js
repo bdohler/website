@@ -32,14 +32,21 @@ game1.flags = {
 	gameLostByAI: false
 };
 
-var importButton = document.getElementById('i');
-importButton.addEventListener('click', function() { readBlob(); parseSaveFile(); });
+var onInit = true;
+var loopRate = 10;
+var bb = brickBreaker(game1, canvas1, onInit);
+var dac = displayAICanvas(game1, canvas2, onInit);
+var mp = monitorPreformance(game1, canvas3, onInit);
+var ai = NEAT(game1, canvas2);
 
-var exportButton = document.getElementById('e');
-exportButton.addEventListener('click', exportToCSV);
+var importButton = document.getElementById('uploadSaveFile');
+importButton.addEventListener('click', ai.loadPool());
+
+var exportButton = document.getElementById('exportSaveFile');
+exportButton.addEventListener('click', ai.savePool());
 
 var humanPlayerCheckBox = document.getElementById('humanPlayer');
-humanPlayerCheckBox.addEventListener('click', function() {game1.flags.humanPlayer = humanPlayerCheckBox.checked; console.log(game1.flags.humanPlayer);} );
+humanPlayerCheckBox.addEventListener('click', function() {game1.flags.humanPlayer = humanPlayerCheckBox.checked;} );
 
 document.addEventListener("keydown", keyDownHandler, false);
 //document.addEventListener("keyup", keyUpHandler, false);
@@ -49,14 +56,6 @@ function keyDownHandler(e) {
 		paused = !paused;
 	}
 }
-
-
-var onInit = true;
-var loopRate = 10;
-var bb = brickBreaker(game1, canvas1, onInit);
-var dac = displayAICanvas(game1, canvas2, onInit);
-var mp = monitorPreformance(game1, canvas3, onInit);
-var ai = NEAT(game1, canvas2);
 
 function loop() {
 

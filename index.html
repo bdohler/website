@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 	<head>
 	    <meta charset="utf-8" />
 	    <title>Brick Breaker</title>
@@ -8,21 +9,25 @@
 	    	canvas { background: #eee; display: block; margin: 0 auto; }
 	    </style>
 	</head>
+	
 	<body>
 
 		<br><canvas id="gameCanvas" width="480" height="320"></canvas><br>
 		<canvas id="AICanvas" width="480" height="160"></canvas><br>
 		<canvas id="preformanceCanvas" width="240" height="80"></canvas><br>
 		
-		
-		Human Player: <input type="checkbox" id="humanPlayer" name="humanPlayer"><br>
-		<button id="e"> Export Save File </button><br>
+		Export current evolution to file: <input type="text" name="fileName">
+		<button id="exportSaveFile">exportSaveFile</button><br><br>
 		<input type="file" id="files" name="files"/><br>
-		<button id="i"> Upload Save File </button><br>
-		Save File Contents: 
-		<div id="file_content"></div>
-		<div id="status"></div>
-		
+		<button id="uploadSaveFile">uploadSaveFile</button><br>
+		<div id="status"></div><br>
+		See specific genome:<br>
+		&nbsp;&nbsp;&nbsp;Generation: <input type="number" name="generationNumber"><br>
+		&nbsp;&nbsp;&nbsp;Species: <input type="number" name="speciesNumber"><br>
+		&nbsp;&nbsp;&nbsp;Genome: <input type="number" name="genomeNumber"><br>
+		<button id="selectGenome">Select Genome</button><br><br>
+		Human Player: <input type="checkbox" id="humanPlayer" name="humanPlayer"><br><br>
+
 		<script type="text/javascript" src="NEAT.js"></script>
 		<script type="text/javascript" src="BrickBreaker.js" ></script>
 		<script type="text/javascript" src="ImportExport.js" ></script>
@@ -30,6 +35,6 @@
 		<script type="text/javascript" src="Preformance.js"></script>
 		<script type="text/javascript" src="Overall.js"></script>
 		
-
 	</body>
+	
 </html>

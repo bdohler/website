@@ -262,7 +262,6 @@ function handlePaddle() {
 
 var returnedFunctions = {};
 
-
 returnedFunctions.restartGame = function () {
 
 	//console.log("Executing Restart in BrickBreaker.js");	
@@ -285,7 +284,6 @@ returnedFunctions.restartGame = function () {
 	dx = 0;
 	game.paddleX = canvas.width/2-paddleRadius;
 	game.gameTime = 0;
-
 }
 
 returnedFunctions.draw = function (game, canvas) {
@@ -312,11 +310,8 @@ returnedFunctions.draw = function (game, canvas) {
 		
 		var n = new Date();
 		game.functionTimes[0] = n - d;
-	}
-
+}
 
 return returnedFunctions;
 
-
 });
-
