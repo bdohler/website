@@ -40,10 +40,10 @@ var mp = monitorPreformance(game1, canvas3, onInit);
 var ai = NEAT(game1, canvas2);
 
 var importButton = document.getElementById('uploadSaveFile');
-importButton.addEventListener('click', ai.loadPool());
+importButton.addEventListener('click', function() {ai.loadPool();} );
 
 var exportButton = document.getElementById('exportSaveFile');
-exportButton.addEventListener('click', ai.savePool());
+exportButton.addEventListener('click', function() {ai.savePool();} );
 
 var humanPlayerCheckBox = document.getElementById('humanPlayer');
 humanPlayerCheckBox.addEventListener('click', function() {game1.flags.humanPlayer = humanPlayerCheckBox.checked;} );

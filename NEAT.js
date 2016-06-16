@@ -831,7 +831,7 @@ function initializeOutputs() {
 
 function initializeRun() {
         //savestate.load(Filename);
-        rightmost = 0;
+        //rightmost = 0;
         //pool.currentFrame = 0;
         timeout = TimeoutConstant;
         initializeOutputs();
@@ -1025,13 +1025,28 @@ function displayGenome(genome) {
 		return;
 }
 
-function writeFile() {
+function writeFile(filename) {
 		var data = {};
-		data.pool = pool;
-		var url = 'data:text/json;charset=utf8,' + JSON.stringify(data);
-		window.open(url, '_blank');
-		window.focus();
-		return;
+		data.pool = JSON.parse(JSON.stringify(pool));
+
+        //Destroy network so you don't save it. It's empty anyways. 
+        data.pool.species.forEach( function(species) {
+                species.genomes.forEach( function(genome) {
+                        genome.network = {};
+                });
+        });
+
+        var a = window.document.createElement('a');
+        a.href = window.URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: 'text/csv'}));
+        a.download = filename;
+
+        // Append anchor to body.
+        document.body.appendChild(a)
+        a.click();
+        // Remove anchor from body
+        document.body.removeChild(a)
+        return;
+
 }
 
 function loadFile() {
@@ -1042,42 +1057,52 @@ function loadFile() {
 			alert('The File APIs are not fully supported in this browser.');
 		}
 
-
 	    var files = document.getElementById('files').files;
 	    if (!files.length) {
 	    	alert('Please select a file!');
 	    	return;
 	    }
+        console.log(files);
 
-	    var file = files[0];
-	    var start = 0;
-	    var stop = file.size - 1;
 	    var reader = new FileReader();
 	    var saveFileString;
 	    var saveFileObject;
+        var ready = false;
 
 	    // If we use onloadend, we need to check the readyState.
 	    reader.onloadend = function(evt) {
-	      if (evt.target.readyState == FileReader.DONE) { // DONE == 2
-	        document.getElementById('file_content').textContent = evt.target.result;
-	        saveFileString = evt.target.result;
-	      }
+	            if (evt.target.readyState == FileReader.DONE) { // DONE == 2
+	                    saveFileString = evt.target.result;
+                        saveFileObject = JSON.parse(saveFileString);
+                        pool = saveFileObject.pool;
+
+                        //Iterate to the next genome which must be ran
+                        while(fitnessAlreadyMeasured()) {
+                                    nextGenome();
+                        }
+
+                        //Reinitialize the run in order to rebuild the network which was destroyed for file saving. 
+                        initializeRun();
+	            }
 	    };
 
-	    var blob = file.slice(start, stop + 1);
-	    reader.readAsBinaryString(blob);
-		document.getElementById('status').textContent = 'Read Save File Complete';
-		saveFileObject = JSON.parse(saveFileString);
+        //Handle FileReaderError
+        reader.onerror = function(evt) {
+            console.log("File Upload Error");
+            return null;
+        }
 
-		return saveFileObject;
+        reader.readAsText(files[0]);
+
 }
 
 var returnedFunctions = {};
 
 returnedFunctions.savePool = function() {
-		var fileName = document.getElementById('fileName');
+		var fileName = document.getElementById('fileName').value;
 		console.log("Saving pool as under filename: "+fileName);
 		if(fileName == undefined) {
+            alert("Please enter a filename");
 			return;
 		}
 		writeFile(fileName);
@@ -1086,11 +1111,7 @@ returnedFunctions.savePool = function() {
 
 returnedFunctions.loadPool = function() {
 		console.log("Executing loadPool");	
-		var saveFileContents = loadFile();
-		if(saveFileContents == undefined) {
-			return;
-		}
-		pool = saveFileContents.pool;
+		loadFile();
 		return;
 }
 
